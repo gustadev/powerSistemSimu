@@ -16,7 +16,7 @@ class SimulatorState:
         self.elements = dict()
         self.network = pypsa.Network()
 
-    def setNode(self, node: CircuitNode, overwrite: bool = False):
+    def setNode(self, node: CircuitNode, overwrite: bool = False) -> str:
         self.elements.setdefault(node.name, node)
         if isinstance(node, BusNode):
             self.network.add(
@@ -51,6 +51,7 @@ class SimulatorState:
             )
         else:
             raise ValueError(f"Unknown node type: {node.type}")
+        return node.name
 
     def removeElement(self, element: CircuitNode):
         # todo
