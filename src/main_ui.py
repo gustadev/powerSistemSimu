@@ -1,195 +1,18 @@
-import string
 import sys
 from typing import *
-import PySide6
-import numpy as np
 import pypsa
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
-    QGraphicsView,
-    QGraphicsScene,
-    QGraphicsRectItem,
     QWidget,
     QVBoxLayout,
     QPushButton,
-    QGraphicsLineItem,
-    QGraphicsSimpleTextItem,
 )
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QPainter
-from PySide6.QtGui import QPen
 import os
 
+from components.board_view import BoardView
+
 network = pypsa.Network()
-
-
-class DraggableLinkSquare(QGraphicsRectItem):
-    def __init__(self, x, y, element: string, parentSquare: QGraphicsRectItem, board):
-        super().__init__(x, y, 10, 10, parent=parentSquare)
-        self.element = element
-        self.board = board
-        self.setBrush(Qt.red)
-        self.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
-        self.setFlag(QGraphicsRectItem.ItemIsFocusable, True)
-        self.drag_line = None
-
-    def mousePressEvent(self, event):
-        self.startPos = event.scenePos()
-        event.accept()
-
-    def mouseMoveEvent(self, event):
-        if not self.drag_line:
-            self.drag_line = QGraphicsLineItem()
-            self.drag_line.setPen(QPen(Qt.blue, 2, Qt.DashLine))
-            self.scene().addItem(self.drag_line)
-        self.drag_line.setLine(
-            self.startPos.x(),
-            self.startPos.y(),
-            event.scenePos().x(),
-            event.scenePos().y(),
-        )
-        event.accept()
-
-    def mouseReleaseEvent(self, event):
-        if self.drag_line:
-            self.scene().removeItem(self.drag_line)
-            self.drag_line = None
-
-        # Procura por um item alvo na cena que não seja o próprio botão
-        items = self.scene().items(event.scenePos())
-        target = None
-        for item in items:
-            if (
-                item is not self
-                and isinstance(item, DraggableLinkSquare)
-                and item.parentItem() != self.parentItem()
-            ):
-                target = item
-            break
-        if target:
-            self.board.onLinkConnected(self, target)
-        event.accept()
-
-
-class LinkLineItem(QGraphicsLineItem):
-    def __init__(self, widget1, widget2):
-        super().__init__()
-        self.widget1 = widget1
-        self.widget2 = widget2
-        self.setPen(QPen(Qt.black, 2))
-        self.setZValue(0)  # So that it stays behind the squares
-
-    def updatePosition(self):
-        p1 = self.widget1.sceneBoundingRect().center()
-        p2 = self.widget2.sceneBoundingRect().center()
-        self.setLine(p1.x(), p1.y(), p2.x(), p2.y())
-
-    def paint(self, painter, option, widget):
-        self.updatePosition()
-        super().paint(painter, option, widget)
-
-
-class BoardView(QGraphicsView):
-    def __init__(self):
-        super().__init__()
-        self.setScene(QGraphicsScene(self))
-        self.setRenderHint(QPainter.Antialiasing)
-        self.setSceneRect(0, 0, 600, 400)
-        self.elementCount = dict()
-        self.elements = dict()
-
-    def addElementToCollections(self, class_name: string):
-        if class_name not in self.elementCount:
-            self.elementCount[class_name] = 0
-        self.elementCount[class_name] += 1
-        element = f"{class_name} {self.elementCount[class_name]}"
-
-        if class_name not in self.elements:
-            self.elements[class_name] = []
-        self.elements[class_name].append(element)
-
-        return (element, self.elementCount[class_name])
-
-    def addVisualAndElectricElement(self, class_name: string, **kwargs: Any):
-        # Update collections
-        (element, count) = self.addElementToCollections(class_name)
-
-        # Add the element to the network
-        network.add(class_name, element, **kwargs)
-
-        # Add the visual representation
-        x = 50 + count * 70
-        y = 50
-        square = QGraphicsRectItem(x, y, 50, 50)
-        square.setBrush(Qt.gray)
-        square.setFlag(QGraphicsRectItem.ItemIsMovable, True)
-        square.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
-        self.scene().addItem(square)
-
-        DraggableLinkSquare(x + 50 / 2, y + 50 / 2, element, square, self)
-
-        # Add label
-        label = QGraphicsSimpleTextItem(element, parent=square)
-        label.setPos(x + 5, y)
-
-    def onLinkConnected(self, source: DraggableLinkSquare, target: DraggableLinkSquare):
-        if not source.element.startswith("Bus") and not target.element.startswith(
-            "Bus"
-        ):
-            print("Cannot link non-bus elements")
-            self.lastFocused = None
-            return
-
-        if source.element.startswith("Bus") and target.element.startswith("Bus"):
-            (line, count) = self.addElementToCollections("Line")
-
-            network.add(
-                "Line", line, bus0=source.element, bus1=target.element, x=0.1, r=0.01
-            )
-
-            self.scene().addItem(LinkLineItem(source, target))
-            self.lastFocused = None
-            return
-
-        if source.element.startswith("Bus") and target.element.startswith("Generator"):
-            network.add(
-                "Generator",
-                target.element,
-                bus=source.element,
-                p_set=100,
-                control="PQ",
-                overwrite=True,
-            )
-            self.scene().addItem(LinkLineItem(source, target))
-            self.lastFocused = None
-            return
-
-        if source.element.startswith("Bus") and target.element.startswith("Load"):
-            network.add(
-                "Load", target.element, bus=source.element, p_set=100, overwrite=True
-            )
-            print("Linked load:", target.element)
-            self.scene().addItem(LinkLineItem(source, target))
-            self.lastFocused = None
-            return
-
-        self.lastFocused = None
-
-    def keyPressEvent(self, event):
-        if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
-            for item in self.scene().selectedItems():
-                self.scene().removeItem(item)
-        else:
-            super().keyPressEvent(event)
-
-    def runPowerFlow(self):
-        network.pf()
-        print("Power flow results:")
-        print(network.lines_t.p0)
-        print(network.buses_t.v_ang * 180 / np.pi)
-        print(network.buses_t.v_mag_pu)
-
 
 def main():
     app = QApplication(sys.argv)
@@ -208,7 +31,7 @@ def main():
     runPowerFlowButton = QPushButton("Run Power Flow")
 
     # Create the board view.
-    board = BoardView()
+    board = BoardView(network=network)
 
     # Connect button signal to the board's addSquare method.
     addBusButton.clicked.connect(
@@ -224,7 +47,6 @@ def main():
 
     # Add widgets to the layout.
     layout.addWidget(addBusButton)
-    # layout.addWidget(addTransformerButton)
     layout.addWidget(addGeneratorButton)
     layout.addWidget(addLoadButton)
     layout.addWidget(board)
@@ -233,6 +55,7 @@ def main():
     window.setCentralWidget(centralWidget)
     window.resize(640, 480)
     window.show()
+
     sys.exit(app.exec())
 
 
