@@ -44,9 +44,9 @@ class BoardView(QGraphicsView):
         label.setPos(x + 5, y)
 
     def onLinkConnected(self, source: DraggableLinkSquare, target: DraggableLinkSquare):
-        canLink = self.onElementLinked(source.element, target.element)
+        (canLink,name) = self.onElementLinked(source.element, target.element)
         if canLink:
-            self.scene().addItem(LinkLineItem(source, target))
+            self.scene().addItem(LinkLineItem(source, target, name))
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):

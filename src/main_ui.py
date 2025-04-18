@@ -28,16 +28,16 @@ def runPowerFlow():
     print(network.buses_t.v_mag_pu)
 
 
-def onElementLinked(board: BoardView, source: string, target: string) -> bool:
+def onElementLinked(board: BoardView, source: string, target: string):
     if not source.startswith("Bus") and not target.startswith("Bus"):
         print("Cannot link non-bus elements")
-        return False
+        return (False,None)
 
     if source.startswith("Bus") and target.startswith("Bus"):
         (line, _) = simulatorState.addElement("Line")
         network.add("Line", line, bus0=source, bus1=target, x=0.1, r=0.01)
         print(f"{line} added between {source} and {target}")
-        return True
+        return (True,line)
 
     if source.startswith("Bus") and target.startswith("Generator"):
         network.add(
@@ -49,13 +49,32 @@ def onElementLinked(board: BoardView, source: string, target: string) -> bool:
             overwrite=True,
         )
         print(f"{target} added to {source}")
-        return True
+        return (True,None)
+    
+    if source.startswith("Generator") and target.startswith("Bus"):
+        network.add(
+            "Generator",
+            source,
+            bus=target,
+            p_set=100,
+            control="PQ",
+            overwrite=True,
+        )
+        print(f"{source} added to {target}")
+        return (True,None)
+    
 
     if source.startswith("Bus") and target.startswith("Load"):
         network.add("Load", target, bus=source, p_set=100, overwrite=True)
         print(f"{target} added to {source}")
-        return True
-    return False
+        return (True,None)
+    
+    if source.startswith("Load") and target.startswith("Bus"):
+        network.add("Load", source, bus=target, p_set=100, overwrite=True)
+        print(f"{source} added to {target}")
+        return (True,None)
+    
+    return (False,None)
 
 
 def addNode(board: BoardView, class_name: string, **kwargs):
