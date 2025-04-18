@@ -4,14 +4,44 @@ from typing import *
 import PySide6
 import numpy as np
 import pypsa
-from PySide6.QtWidgets import (QApplication, QMainWindow, QGraphicsView, QGraphicsScene,
-                               QGraphicsRectItem, QWidget, QVBoxLayout, QPushButton, QGraphicsLineItem,QGraphicsSimpleTextItem)
+from PySide6.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QGraphicsView,
+    QGraphicsScene,
+    QGraphicsRectItem,
+    QWidget,
+    QVBoxLayout,
+    QPushButton,
+    QGraphicsLineItem,
+    QGraphicsSimpleTextItem,
+)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter
+from PySide6.QtGui import QPen
 import os
 
 network = pypsa.Network()
-    
+
+
+class LinkLineItem(QGraphicsLineItem):
+    def __init__(self, widget1, widget2):
+        super().__init__()
+        self.widget1 = widget1
+        self.widget2 = widget2
+        self.setPen(QPen(Qt.black, 2))
+        self.setZValue(0)  # So that it stays behind the squares
+
+    def updatePosition(self):
+        p1 = self.widget1.sceneBoundingRect().center()
+        p2 = self.widget2.sceneBoundingRect().center()
+        self.setLine(p1.x(), p1.y(), p2.x(), p2.y())
+
+    def paint(self, painter, option, widget):
+        self.updatePosition()
+        super().paint(painter, option, widget)
+
+
 class BoardView(QGraphicsView):
     def __init__(self):
         super().__init__()
@@ -20,23 +50,21 @@ class BoardView(QGraphicsView):
         self.setSceneRect(0, 0, 600, 400)
         self.elementCount = dict()
         self.elements = dict()
-        self.selectedLink = None
-      
+        self.lastFocused = None
 
-    def addElementToCollections(self, class_name : string):
+    def addElementToCollections(self, class_name: string):
         if class_name not in self.elementCount:
             self.elementCount[class_name] = 0
         self.elementCount[class_name] += 1
         element = f"{class_name} {self.elementCount[class_name]}"
-        
+
         if class_name not in self.elements:
             self.elements[class_name] = []
         self.elements[class_name].append(element)
 
         return (element, self.elementCount[class_name])
 
-
-    def addVisualAndElectricElement(self, class_name : string, **kwargs : Any):
+    def addVisualAndElectricElement(self, class_name: string, **kwargs: Any):
         # Update collections
         (element, count) = self.addElementToCollections(class_name)
 
@@ -53,72 +81,62 @@ class BoardView(QGraphicsView):
         self.scene().addItem(square)
 
         # Add link button
-        red_square = QGraphicsRectItem(x + 50/2, y + 50/2, 10, 10, parent=square)
+        red_square = QGraphicsRectItem(x + 50 / 2, y + 50 / 2, 10, 10, parent=square)
         red_square.setBrush(Qt.red)
         red_square.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
         red_square.setFlag(QGraphicsRectItem.ItemIsFocusable, True)
-        red_square.focusInEvent = lambda event: self.onLinkTap(red_square, element)
+        red_square.focusInEvent = lambda event: self.onLinkFocused(red_square, element)
 
         # Add label
         label = QGraphicsSimpleTextItem(element, parent=square)
         label.setPos(x + 5, y)
-    
 
-    def onLinkTap(self, widget, element):
-        if(self.selectedLink == None):
-            self.selectedLink = (widget, element)
+    def onLinkFocused(self, widget: QGraphicsRectItem, element: string):
+        if self.lastFocused == None:
+            self.lastFocused = (widget, element)
             print("Selected link:", widget)
             return
         
-        if(element.startswith("Bus") and self.selectedLink[1].startswith("Bus")):
+        if(not element.startswith("Bus") and not self.lastFocused[1].startswith("Bus")):
+            print("Cannot link non-bus elements")
+            self.lastFocused = None
+            return
+        
+        if element.startswith("Bus") and self.lastFocused[1].startswith("Bus"):
             (line, count) = self.addElementToCollections("Line")
-              
+
             network.add(
-            "Line",
-            line,
-            bus0=element,
-            bus1=self.selectedLink[1],
-                x=0.1,
-                r=0.01,
+                "Line", line, bus0=element, bus1=self.lastFocused[1], x=0.1, r=0.01
             )
-           
+
             print("Added line:", line)
-            line_item = QGraphicsLineItem(
-                self.selectedLink[0].sceneBoundingRect().center().x(),
-                self.selectedLink[0].sceneBoundingRect().center().y(),
-                widget.sceneBoundingRect().center().x(),
-                widget.sceneBoundingRect().center().y(),
+            self.scene().addItem(LinkLineItem(widget, self.lastFocused[0]))
+            self.lastFocused = None
+            return
+
+        if element.startswith("Bus") and self.lastFocused[1].startswith("Generator"):
+            network.add(
+                "Generator",
+                self.lastFocused[1],
+                bus=element,
+                p_set=100,
+                control="PQ",
+                overwrite=True,
             )
-            self.scene().addItem(line_item)
-            self.selectedLink = None
+            self.scene().addItem(LinkLineItem(widget, self.lastFocused[0]))
+            self.lastFocused = None
             return
-        
-        if(element.startswith("Bus") and self.selectedLink[1].startswith("Generator")):
-          network.add("Generator", self.selectedLink[1], bus=element, p_set=100, control="PQ", overwrite=True)
-          print("Linked generator:", self.selectedLink[1])
-          line_item = QGraphicsLineItem(
-            self.selectedLink[0].sceneBoundingRect().center().x(),
-            self.selectedLink[0].sceneBoundingRect().center().y(),
-            widget.sceneBoundingRect().center().x(),
-            widget.sceneBoundingRect().center().y(),
-           )
-          self.scene().addItem(line_item)
-          self.selectedLink = None
-          return
-        
-        if(element.startswith("Bus") and self.selectedLink[1].startswith("Load")):
-            network.add("Load", self.selectedLink[1], bus=element, p_set=100, overwrite=True)
-            print("Linked load:", self.selectedLink[1])
-            line_item = QGraphicsLineItem(
-                self.selectedLink[0].sceneBoundingRect().center().x(),
-                self.selectedLink[0].sceneBoundingRect().center().y(),
-                widget.sceneBoundingRect().center().x(),
-                widget.sceneBoundingRect().center().y(),
-             )
-            self.scene().addItem(line_item)
-            self.selectedLink = None
+
+        if element.startswith("Bus") and self.lastFocused[1].startswith("Load"):
+            network.add(
+                "Load", self.lastFocused[1], bus=element, p_set=100, overwrite=True
+            )
+            print("Linked load:", self.lastFocused[1])
+            self.scene().addItem(LinkLineItem(widget, self.lastFocused[0]))
+            self.lastFocused = None
             return
-        
+
+        self.lastFocused = None
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
@@ -127,12 +145,13 @@ class BoardView(QGraphicsView):
         else:
             super().keyPressEvent(event)
 
-    def runPowerFlow(self) : 
+    def runPowerFlow(self):
         network.pf()
         print("Power flow results:")
         print(network.lines_t.p0)
         print(network.buses_t.v_ang * 180 / np.pi)
         print(network.buses_t.v_mag_pu)
+
 
 def main():
     app = QApplication(sys.argv)
@@ -154,9 +173,15 @@ def main():
     board = BoardView()
 
     # Connect button signal to the board's addSquare method.
-    addBusButton.clicked.connect(lambda: board.addVisualAndElectricElement("Bus", v_nom=20.0))
-    addLoadButton.clicked.connect(lambda: board.addVisualAndElectricElement("Load", p_set=100))
-    addGeneratorButton.clicked.connect(lambda: board.addVisualAndElectricElement("Generator", p_set=100, control="PQ"))
+    addBusButton.clicked.connect(
+        lambda: board.addVisualAndElectricElement("Bus", v_nom=20.0)
+    )
+    addLoadButton.clicked.connect(
+        lambda: board.addVisualAndElectricElement("Load", p_set=100)
+    )
+    addGeneratorButton.clicked.connect(
+        lambda: board.addVisualAndElectricElement("Generator", p_set=100, control="PQ")
+    )
     runPowerFlowButton.clicked.connect(lambda: board.runPowerFlow())
 
     # Add widgets to the layout.
@@ -172,6 +197,7 @@ def main():
     window.show()
     sys.exit(app.exec())
 
-if __name__ == '__main__':
-    os.system('cls' if os.name == 'nt' else 'clear')
+
+if __name__ == "__main__":
+    os.system("cls" if os.name == "nt" else "clear")
     main()
