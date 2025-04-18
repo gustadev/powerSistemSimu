@@ -24,6 +24,54 @@ import os
 network = pypsa.Network()
 
 
+class DraggableLinkSquare(QGraphicsRectItem):
+    def __init__(self, x, y, element: string, parentSquare: QGraphicsRectItem, board):
+        super().__init__(x, y, 10, 10, parent=parentSquare)
+        self.element = element
+        self.board = board
+        self.setBrush(Qt.red)
+        self.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
+        self.setFlag(QGraphicsRectItem.ItemIsFocusable, True)
+        self.drag_line = None
+
+    def mousePressEvent(self, event):
+        self.startPos = event.scenePos()
+        event.accept()
+
+    def mouseMoveEvent(self, event):
+        if not self.drag_line:
+            self.drag_line = QGraphicsLineItem()
+            self.drag_line.setPen(QPen(Qt.blue, 2, Qt.DashLine))
+            self.scene().addItem(self.drag_line)
+        self.drag_line.setLine(
+            self.startPos.x(),
+            self.startPos.y(),
+            event.scenePos().x(),
+            event.scenePos().y(),
+        )
+        event.accept()
+
+    def mouseReleaseEvent(self, event):
+        if self.drag_line:
+            self.scene().removeItem(self.drag_line)
+            self.drag_line = None
+
+        # Procura por um item alvo na cena que não seja o próprio botão
+        items = self.scene().items(event.scenePos())
+        target = None
+        for item in items:
+            if (
+                item is not self
+                and isinstance(item, DraggableLinkSquare)
+                and item.parentItem() != self.parentItem()
+            ):
+                target = item
+            break
+        if target:
+            self.board.onLinkConnected(self, target)
+        event.accept()
+
+
 class LinkLineItem(QGraphicsLineItem):
     def __init__(self, widget1, widget2):
         super().__init__()
@@ -50,7 +98,6 @@ class BoardView(QGraphicsView):
         self.setSceneRect(0, 0, 600, 400)
         self.elementCount = dict()
         self.elements = dict()
-        self.lastFocused = None
 
     def addElementToCollections(self, class_name: string):
         if class_name not in self.elementCount:
@@ -80,59 +127,50 @@ class BoardView(QGraphicsView):
         square.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
         self.scene().addItem(square)
 
-        # Add link button
-        red_square = QGraphicsRectItem(x + 50 / 2, y + 50 / 2, 10, 10, parent=square)
-        red_square.setBrush(Qt.red)
-        red_square.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
-        red_square.setFlag(QGraphicsRectItem.ItemIsFocusable, True)
-        red_square.focusInEvent = lambda event: self.onLinkFocused(red_square, element)
+        DraggableLinkSquare(x + 50 / 2, y + 50 / 2, element, square, self)
 
         # Add label
         label = QGraphicsSimpleTextItem(element, parent=square)
         label.setPos(x + 5, y)
 
-    def onLinkFocused(self, widget: QGraphicsRectItem, element: string):
-        if self.lastFocused == None:
-            self.lastFocused = (widget, element)
-            print("Selected link:", widget)
-            return
-        
-        if(not element.startswith("Bus") and not self.lastFocused[1].startswith("Bus")):
+    def onLinkConnected(self, source: DraggableLinkSquare, target: DraggableLinkSquare):
+        if not source.element.startswith("Bus") and not target.element.startswith(
+            "Bus"
+        ):
             print("Cannot link non-bus elements")
             self.lastFocused = None
             return
-        
-        if element.startswith("Bus") and self.lastFocused[1].startswith("Bus"):
+
+        if source.element.startswith("Bus") and target.element.startswith("Bus"):
             (line, count) = self.addElementToCollections("Line")
 
             network.add(
-                "Line", line, bus0=element, bus1=self.lastFocused[1], x=0.1, r=0.01
+                "Line", line, bus0=source.element, bus1=target.element, x=0.1, r=0.01
             )
 
-            print("Added line:", line)
-            self.scene().addItem(LinkLineItem(widget, self.lastFocused[0]))
+            self.scene().addItem(LinkLineItem(source, target))
             self.lastFocused = None
             return
 
-        if element.startswith("Bus") and self.lastFocused[1].startswith("Generator"):
+        if source.element.startswith("Bus") and target.element.startswith("Generator"):
             network.add(
                 "Generator",
-                self.lastFocused[1],
-                bus=element,
+                target.element,
+                bus=source.element,
                 p_set=100,
                 control="PQ",
                 overwrite=True,
             )
-            self.scene().addItem(LinkLineItem(widget, self.lastFocused[0]))
+            self.scene().addItem(LinkLineItem(source, target))
             self.lastFocused = None
             return
 
-        if element.startswith("Bus") and self.lastFocused[1].startswith("Load"):
+        if source.element.startswith("Bus") and target.element.startswith("Load"):
             network.add(
-                "Load", self.lastFocused[1], bus=element, p_set=100, overwrite=True
+                "Load", target.element, bus=source.element, p_set=100, overwrite=True
             )
-            print("Linked load:", self.lastFocused[1])
-            self.scene().addItem(LinkLineItem(widget, self.lastFocused[0]))
+            print("Linked load:", target.element)
+            self.scene().addItem(LinkLineItem(source, target))
             self.lastFocused = None
             return
 
