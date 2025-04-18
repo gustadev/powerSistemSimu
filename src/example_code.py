@@ -1,5 +1,6 @@
 import math
 
+
 def main():
     try:
         # Read coefficients a, b, and c from the user.
