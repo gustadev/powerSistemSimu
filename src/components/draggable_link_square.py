@@ -9,14 +9,22 @@ from PySide6.QtGui import QPen
 
 
 class DraggableLinkSquare(QGraphicsRectItem):
-    def __init__(self, x, y, element: string, parentSquare: QGraphicsRectItem, board):
+    def __init__(
+        self,
+        x,
+        y,
+        element: string,
+        parentSquare: QGraphicsRectItem,
+        # (self, target) -> void
+        onConnectionStart: Callable,
+    ):
         super().__init__(x, y, 10, 10, parent=parentSquare)
         self.element = element
-        self.board = board
         self.setBrush(Qt.red)
         self.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
         self.setFlag(QGraphicsRectItem.ItemIsFocusable, True)
         self.drag_line = None
+        self.onConnectionStart = onConnectionStart
 
     def mousePressEvent(self, event):
         self.startPos = event.scenePos()
@@ -52,5 +60,5 @@ class DraggableLinkSquare(QGraphicsRectItem):
                 target = item
             break
         if target:
-            self.board.onLinkConnected(self, target)
+            self.onConnectionStart(self, target)
         event.accept()

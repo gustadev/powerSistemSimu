@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPen
 
+
 class LinkLineItem(QGraphicsLineItem):
     def __init__(self, widget1, widget2):
         super().__init__()
@@ -21,4 +22,3 @@ class LinkLineItem(QGraphicsLineItem):
     def paint(self, painter, option, widget):
         self.updatePosition()
         super().paint(painter, option, widget)
-

@@ -1,4 +1,3 @@
-
 import string
 from typing import *
 import numpy as np
@@ -14,6 +13,7 @@ from PySide6.QtGui import QPainter
 from components.draggable_link_square import DraggableLinkSquare
 from components.link_line_item import LinkLineItem
 
+
 class BoardView(QGraphicsView):
     def __init__(self, network):
         super().__init__()
@@ -23,6 +23,7 @@ class BoardView(QGraphicsView):
         self.elementCount = dict()
         self.elements = dict()
         self.network = network
+        self.onElementLinked: Callable = None
 
     def addElementToCollections(self, class_name: string):
         if class_name not in self.elementCount:
@@ -52,54 +53,22 @@ class BoardView(QGraphicsView):
         square.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
         self.scene().addItem(square)
 
-        DraggableLinkSquare(x + 50 / 2, y + 50 / 2, element, square, self)
+        DraggableLinkSquare(
+            x + 50 / 2,
+            y + 50 / 2,
+            element,
+            square,
+            onConnectionStart=self.onLinkConnected,
+        )
 
         # Add label
         label = QGraphicsSimpleTextItem(element, parent=square)
         label.setPos(x + 5, y)
 
     def onLinkConnected(self, source: DraggableLinkSquare, target: DraggableLinkSquare):
-        if not source.element.startswith("Bus") and not target.element.startswith(
-            "Bus"
-        ):
-            print("Cannot link non-bus elements")
-            self.lastFocused = None
-            return
-
-        if source.element.startswith("Bus") and target.element.startswith("Bus"):
-            (line, count) = self.addElementToCollections("Line")
-
-            self.network.add(
-                "Line", line, bus0=source.element, bus1=target.element, x=0.1, r=0.01
-            )
-
+        canLink = self.onElementLinked(source.element, target.element)
+        if canLink:
             self.scene().addItem(LinkLineItem(source, target))
-            self.lastFocused = None
-            return
-
-        if source.element.startswith("Bus") and target.element.startswith("Generator"):
-            self.network.add(
-                "Generator",
-                target.element,
-                bus=source.element,
-                p_set=100,
-                control="PQ",
-                overwrite=True,
-            )
-            self.scene().addItem(LinkLineItem(source, target))
-            self.lastFocused = None
-            return
-
-        if source.element.startswith("Bus") and target.element.startswith("Load"):
-            self.network.add(
-                "Load", target.element, bus=source.element, p_set=100, overwrite=True
-            )
-            print("Linked load:", target.element)
-            self.scene().addItem(LinkLineItem(source, target))
-            self.lastFocused = None
-            return
-
-        self.lastFocused = None
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
@@ -107,10 +76,3 @@ class BoardView(QGraphicsView):
                 self.scene().removeItem(item)
         else:
             super().keyPressEvent(event)
-
-    def runPowerFlow(self):
-        self.network.pf()
-        print("Power flow results:")
-        print(self.network.lines_t.p0)
-        print(self.network.buses_t.v_ang * 180 / np.pi)
-        print(self.network.buses_t.v_mag_pu)

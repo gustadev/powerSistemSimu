@@ -1,5 +1,7 @@
+import string
 import sys
 from typing import *
+import numpy as np
 import pypsa
 from PySide6.QtWidgets import (
     QApplication,
@@ -11,8 +13,46 @@ from PySide6.QtWidgets import (
 import os
 
 from components.board_view import BoardView
+from components.link_line_item import LinkLineItem
 
 network = pypsa.Network()
+
+
+def runPowerFlow():
+    network.pf()
+    print("Power flow results:")
+    print(network.lines_t.p0)
+    print(network.buses_t.v_ang * 180 / np.pi)
+    print(network.buses_t.v_mag_pu)
+
+
+def onElementLinked(board: BoardView, source: string, target: string) -> bool:
+    if not source.startswith("Bus") and not target.startswith("Bus"):
+        print("Cannot link non-bus elements")
+        return False
+
+    if source.startswith("Bus") and target.startswith("Bus"):
+        (line, _) = board.addElementToCollections("Line")
+
+        network.add("Line", line, bus0=source, bus1=target, x=0.1, r=0.01)
+        return True
+
+    if source.startswith("Bus") and target.startswith("Generator"):
+        network.add(
+            "Generator",
+            target,
+            bus=source,
+            p_set=100,
+            control="PQ",
+            overwrite=True,
+        )
+        return True
+
+    if source.startswith("Bus") and target.startswith("Load"):
+        network.add("Load", target, bus=source, p_set=100, overwrite=True)
+        return True
+    return False
+
 
 def main():
     app = QApplication(sys.argv)
@@ -32,6 +72,9 @@ def main():
 
     # Create the board view.
     board = BoardView(network=network)
+    board.onElementLinked = lambda source, target: onElementLinked(
+        board, source, target
+    )
 
     # Connect button signal to the board's addSquare method.
     addBusButton.clicked.connect(
@@ -43,7 +86,7 @@ def main():
     addGeneratorButton.clicked.connect(
         lambda: board.addVisualAndElectricElement("Generator", p_set=100, control="PQ")
     )
-    runPowerFlowButton.clicked.connect(lambda: board.runPowerFlow())
+    runPowerFlowButton.clicked.connect(lambda: runPowerFlow())
 
     # Add widgets to the layout.
     layout.addWidget(addBusButton)
