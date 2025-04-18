@@ -14,8 +14,10 @@ import os
 
 from components.board_view import BoardView
 from components.link_line_item import LinkLineItem
+from models.simulator_state import SimulatorState
 
 network = pypsa.Network()
+simulatorState = SimulatorState()
 
 
 def runPowerFlow():
@@ -32,9 +34,9 @@ def onElementLinked(board: BoardView, source: string, target: string) -> bool:
         return False
 
     if source.startswith("Bus") and target.startswith("Bus"):
-        (line, _) = board.addElementToCollections("Line")
-
+        (line, _) = simulatorState.addElement("Line")
         network.add("Line", line, bus0=source, bus1=target, x=0.1, r=0.01)
+        print(f"{line} added between {source} and {target}")
         return True
 
     if source.startswith("Bus") and target.startswith("Generator"):
@@ -46,12 +48,21 @@ def onElementLinked(board: BoardView, source: string, target: string) -> bool:
             control="PQ",
             overwrite=True,
         )
+        print(f"{target} added to {source}")
         return True
 
     if source.startswith("Bus") and target.startswith("Load"):
         network.add("Load", target, bus=source, p_set=100, overwrite=True)
+        print(f"{target} added to {source}")
         return True
     return False
+
+
+def addNode(board: BoardView, class_name: string, **kwargs):
+    (element, count) = simulatorState.addElement(class_name)
+    network.add(class_name, element, **kwargs)
+    board.addVisualAndElectricElement(element, count)
+    print(f"{element} added to the board, with {kwargs}")
 
 
 def main():
@@ -71,20 +82,16 @@ def main():
     runPowerFlowButton = QPushButton("Run Power Flow")
 
     # Create the board view.
-    board = BoardView(network=network)
+    board = BoardView()
     board.onElementLinked = lambda source, target: onElementLinked(
         board, source, target
     )
 
     # Connect button signal to the board's addSquare method.
-    addBusButton.clicked.connect(
-        lambda: board.addVisualAndElectricElement("Bus", v_nom=20.0)
-    )
-    addLoadButton.clicked.connect(
-        lambda: board.addVisualAndElectricElement("Load", p_set=100)
-    )
+    addBusButton.clicked.connect(lambda: addNode(board, "Bus", v_nom=20.0))
+    addLoadButton.clicked.connect(lambda: addNode(board, "Load", p_set=100))
     addGeneratorButton.clicked.connect(
-        lambda: board.addVisualAndElectricElement("Generator", p_set=100, control="PQ")
+        lambda: addNode(board, "Generator", p_set=100, control="PQ")
     )
     runPowerFlowButton.clicked.connect(lambda: runPowerFlow())
 
