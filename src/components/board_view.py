@@ -43,10 +43,18 @@ class BoardView(QGraphicsView):
         label = QGraphicsSimpleTextItem(nodeName, parent=widget)
         label.setPos(x + 5, y)
 
-    def onLinkConnected(self, sourceNodeDraggableLink: DraggableLinkSquare, targetNodeDraggableLink: DraggableLinkSquare):
-        (canLink,nodeName) = self.onElementLinked(sourceNodeDraggableLink.nodeName, targetNodeDraggableLink.nodeName)
+    def onLinkConnected(
+        self,
+        sourceNodeDraggableLink: DraggableLinkSquare,
+        targetNodeDraggableLink: DraggableLinkSquare,
+    ):
+        (canLink, nodeName) = self.onElementLinked(
+            sourceNodeDraggableLink.nodeName, targetNodeDraggableLink.nodeName
+        )
         if canLink:
-            self.scene().addItem(LinkLineItem(sourceNodeDraggableLink, targetNodeDraggableLink, nodeName))
+            self.scene().addItem(
+                LinkLineItem(sourceNodeDraggableLink, targetNodeDraggableLink, nodeName)
+            )
 
     # TODO handle deletion. must sync with simulator state
     # def keyPressEvent(self, event):

@@ -43,7 +43,7 @@ class GeneratorNode(CircuitNode):
 class LoadNode(CircuitNode):
     counter = 0
 
-    def __init__(self, p_set: float, bus: str = None): 
+    def __init__(self, p_set: float, bus: str = None):
         LoadNode.counter += 1
         super().__init__(f"Load {LoadNode.counter}", f"Load")
         self.busName = None | str
