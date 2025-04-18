@@ -13,13 +13,13 @@ class DraggableLinkSquare(QGraphicsRectItem):
         self,
         x,
         y,
-        element: string,
+        nodeName: string,
         parentSquare: QGraphicsRectItem,
         # (self, target) -> void
         onConnectionStart: Callable,
     ):
         super().__init__(x, y, 10, 10, parent=parentSquare)
-        self.element = element
+        self.nodeName = nodeName
         self.setBrush(Qt.red)
         self.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
         self.setFlag(QGraphicsRectItem.ItemIsFocusable, True)

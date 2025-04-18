@@ -21,36 +21,37 @@ class BoardView(QGraphicsView):
         self.setSceneRect(0, 0, 600, 400)
         self.onElementLinked: Callable = None
 
-    def addVisualAndElectricElement(self, element: string, count: int):
+    def addNodeWidget(self, nodeName: string):
         # Add the visual representation
-        x = 50 + count * 70
+        x = 50
         y = 50
-        square = QGraphicsRectItem(x, y, 50, 50)
-        square.setBrush(Qt.gray)
-        square.setFlag(QGraphicsRectItem.ItemIsMovable, True)
-        square.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
-        self.scene().addItem(square)
+        widget = QGraphicsRectItem(x, y, 50, 50)
+        widget.setBrush(Qt.gray)
+        widget.setFlag(QGraphicsRectItem.ItemIsMovable, True)
+        widget.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
+        self.scene().addItem(widget)
 
         DraggableLinkSquare(
             x + 50 / 2,
             y + 50 / 2,
-            element,
-            square,
+            nodeName,
+            widget,
             onConnectionStart=self.onLinkConnected,
         )
 
         # Add label
-        label = QGraphicsSimpleTextItem(element, parent=square)
+        label = QGraphicsSimpleTextItem(nodeName, parent=widget)
         label.setPos(x + 5, y)
 
-    def onLinkConnected(self, source: DraggableLinkSquare, target: DraggableLinkSquare):
-        (canLink,name) = self.onElementLinked(source.element, target.element)
+    def onLinkConnected(self, sourceNodeDraggableLink: DraggableLinkSquare, targetNodeDraggableLink: DraggableLinkSquare):
+        (canLink,nodeName) = self.onElementLinked(sourceNodeDraggableLink.nodeName, targetNodeDraggableLink.nodeName)
         if canLink:
-            self.scene().addItem(LinkLineItem(source, target, name))
+            self.scene().addItem(LinkLineItem(sourceNodeDraggableLink, targetNodeDraggableLink, nodeName))
 
-    def keyPressEvent(self, event):
-        if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
-            for item in self.scene().selectedItems():
-                self.scene().removeItem(item)
-        else:
-            super().keyPressEvent(event)
+    # TODO handle deletion. must sync with simulator state
+    # def keyPressEvent(self, event):
+    #     if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+    #         for item in self.scene().selectedItems():
+    #             self.scene().removeItem(item)
+    #     else:
+    #         super().keyPressEvent(event)

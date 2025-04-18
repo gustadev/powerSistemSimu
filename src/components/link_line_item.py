@@ -7,28 +7,26 @@ from PySide6.QtWidgets import QGraphicsSimpleTextItem
 from PySide6.QtGui import QPen
 
 class LinkLineItem(QGraphicsLineItem):
-    def __init__(self, widget1, widget2, element):
+    def __init__(self, sourceNodeDraggableLink, targetNodeDraggableLink, connectionName):
         super().__init__()
-        self.widget1 = widget1
-        self.widget2 = widget2
+        self.sourceNodeDraggableLink = sourceNodeDraggableLink
+        self.targetNodeDraggableLink = targetNodeDraggableLink
         self.setPen(QPen(Qt.blue, 1))
         self.setZValue(0)  # So that it stays behind the squares
-        self.label = None
+        self.connectionName = None
         self.center = None
-        if element:
-            self.label = QGraphicsSimpleTextItem(element)
-            self.label.setBrush(Qt.white)
-            self.label.setParentItem(self)
+        if connectionName:
+            self.connectionName = QGraphicsSimpleTextItem(connectionName)
+            self.connectionName.setBrush(Qt.white)
+            self.connectionName.setParentItem(self)
             
-
-
     def updatePosition(self):
-        p1 = self.widget1.sceneBoundingRect().center()
-        p2 = self.widget2.sceneBoundingRect().center()        
+        p1 = self.sourceNodeDraggableLink.sceneBoundingRect().center()
+        p2 = self.targetNodeDraggableLink.sceneBoundingRect().center()        
         self.setLine(p1.x(), p1.y(), p2.x(), p2.y())
-        if self.label:
+        if self.connectionName:
             self.center = p1 + (p2 - p1) / 2
-            self.label.setPos(self.center.x(), self.center.y())
+            self.connectionName.setPos(self.center.x(), self.center.y())
 
 
     def paint(self, painter, option, widget):
