@@ -7,24 +7,17 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPen
 
+from models.simulator_state import SimulatorState
+
 
 class DraggableLinkSquare(QGraphicsRectItem):
-    def __init__(
-        self,
-        x,
-        y,
-        nodeName: string,
-        parentSquare: QGraphicsRectItem,
-        # (self, target) -> void
-        onConnectionStart: Callable,
-    ):
-        super().__init__(x, y, 10, 10, parent=parentSquare)
-        self.nodeName = nodeName
+    def __init__(self, x, y, parent: QGraphicsRectItem):
+        super().__init__(x, y, 10, 10, parent=parent)
+        self.parent = parent
         self.setBrush(Qt.red)
         self.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
         self.setFlag(QGraphicsRectItem.ItemIsFocusable, True)
         self.drag_line = None
-        self.onConnectionStart = onConnectionStart
 
     def mousePressEvent(self, event):
         self.startPos = event.scenePos()
@@ -48,7 +41,6 @@ class DraggableLinkSquare(QGraphicsRectItem):
             self.scene().removeItem(self.drag_line)
             self.drag_line = None
 
-        # Procura por um item alvo na cena que não seja o próprio botão
         items = self.scene().items(event.scenePos())
         target = None
         for item in items:
@@ -60,5 +52,5 @@ class DraggableLinkSquare(QGraphicsRectItem):
                 target = item
             break
         if target:
-            self.onConnectionStart(self, target)
+            SimulatorState.instance().addConnection(self.parent.node, target.parent.node)
         event.accept()

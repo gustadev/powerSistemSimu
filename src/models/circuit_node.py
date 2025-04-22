@@ -1,50 +1,46 @@
 import string
+import time
 
 
 class CircuitNode:
-    def __init__(self, name: str, node_type: str):
-        self.name = name
+    counter = 0
+
+    def __init__(self, node_type: str):
+        self.id = CircuitNode.__getRandomId()
         self.type = node_type
+        CircuitNode.counter += 1
+        self.name = f"{node_type[:2]}_{CircuitNode.counter}"
+
+    def __getRandomId():
+        return hex(time.time_ns())[2:]
 
 
 class BusNode(CircuitNode):
-    counter = 0
-
     def __init__(self, v_nom: float):
-        BusNode.counter += 1
-        super().__init__(f"Bus {BusNode.counter}", f"Bus")
+        super().__init__(f"Bus")
         self.v_nom: float = v_nom
-        self.connectionNames: list[CircuitNode] = []
+        self.connectionIds: list[str] = []
 
 
 class TransmissionLineNode(CircuitNode):
-    counter = 0
-
-    def __init__(self, x: float, r: float, sourceBusName: str, targetBusName: str):
-        TransmissionLineNode.counter += 1
-        super().__init__(f"Line {TransmissionLineNode.counter}", f"Line")
+    def __init__(self, x: float, r: float, sourceId: str, targetId: str):
+        super().__init__(f"Line")
         self.x: float = x
         self.r: float = r
-        self.sourceBusName: str = sourceBusName
-        self.targetBusName: str = targetBusName
+        self.sourceId: str = sourceId
+        self.targetId: str = targetId
 
 
 class GeneratorNode(CircuitNode):
-    counter = 0
-
-    def __init__(self, p_set: float, control: str, bus: str = None):
-        GeneratorNode.counter += 1
-        super().__init__(f"Gen {GeneratorNode.counter}", f"Generator")
+    def __init__(self, p_set: float, control: str, busId: str = None):
+        super().__init__(f"Generator")
         self.p_set: float = p_set
         self.control: float = control
-        self.busName = None | str
+        self.busId = busId
 
 
 class LoadNode(CircuitNode):
-    counter = 0
-
-    def __init__(self, p_set: float, bus: str = None):
-        LoadNode.counter += 1
-        super().__init__(f"Load {LoadNode.counter}", f"Load")
-        self.busName = None | str
+    def __init__(self, p_set: float, busId: str = None):
+        super().__init__(f"Load")
+        self.busId = busId
         self.p_set: float = p_set

@@ -7,18 +7,11 @@ from PySide6.QtWidgets import (
 )
 
 from components.board_view import BoardView
+from models.simulator_state import SimulatorState
 
 
-# TODO make every callcable return string, receibe 2 strings too
 class MainWindow(QMainWindow):
-    def __init__(
-        self,
-        onAddBusTap: Callable,
-        onAddGeneratorTap: Callable,
-        onAddLoadTap: Callable,
-        onRunPowerFlowTap: Callable,
-        onElementLinked: Callable,
-    ):
+    def __init__(self):
         super().__init__()
         centralWidget = QWidget()
         layout = QVBoxLayout(centralWidget)
@@ -30,21 +23,13 @@ class MainWindow(QMainWindow):
 
         # Create the board view.
         board = BoardView()
-        board.onElementLinked = onElementLinked
-
-        def onAddElementWrapper(callable: Callable):
-            def createNodeWrapper():
-                nodeName = callable()
-                if nodeName:
-                    board.addNodeWidget(nodeName)
-
-            return createNodeWrapper
+        simulatorInstance = SimulatorState.instance()
 
         # Connect button signal to the board's addSquare method.
-        addBusButton.clicked.connect(onAddElementWrapper(onAddBusTap))
-        addLoadButton.clicked.connect(onAddElementWrapper(onAddLoadTap))
-        addGeneratorButton.clicked.connect(onAddElementWrapper(onAddGeneratorTap))
-        runPowerFlowButton.clicked.connect(onAddElementWrapper(onRunPowerFlowTap))
+        addBusButton.clicked.connect(simulatorInstance.addBus)
+        addLoadButton.clicked.connect(simulatorInstance.addLoad)
+        addGeneratorButton.clicked.connect(simulatorInstance.addGenerator)
+        runPowerFlowButton.clicked.connect(simulatorInstance.runPowerFlow)
 
         # Add widgets to the layout.
         layout.addWidget(addBusButton)

@@ -1,16 +1,14 @@
-import string
 from typing import *
 from PySide6.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
-    QGraphicsRectItem,
-    QGraphicsSimpleTextItem,
 )
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter
 
-from components.draggable_link_square import DraggableLinkSquare
+from components.circuit_node_widget import CircuitNodeWidget
 from components.link_line_item import LinkLineItem
+from models.circuit_node import CircuitNode, TransmissionLineNode
+from models.simulator_state import SimulatorState
 
 
 class BoardView(QGraphicsView):
@@ -19,42 +17,25 @@ class BoardView(QGraphicsView):
         self.setScene(QGraphicsScene(self))
         self.setRenderHint(QPainter.Antialiasing)
         self.setSceneRect(0, 0, 600, 400)
-        self.onElementLinked: Callable = None
+        self.simulatorWidgets = dict()
+        simulatorInstance = SimulatorState.instance()
+        simulatorInstance.onNodeCreated = self.addNodeWidget
+        simulatorInstance.onWireCreated = self.addConnectionWidget
 
-    def addNodeWidget(self, nodeName: string):
-        # Add the visual representation
-        x = 50
-        y = 50
-        widget = QGraphicsRectItem(x, y, 50, 50)
-        widget.setBrush(Qt.gray)
-        widget.setFlag(QGraphicsRectItem.ItemIsMovable, True)
-        widget.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
+    def addNodeWidget(self, node: CircuitNode):
+        widget = CircuitNodeWidget(50, 50, node)
         self.scene().addItem(widget)
+        self.simulatorWidgets[node.id] = widget
 
-        DraggableLinkSquare(
-            x + 50 / 2,
-            y + 50 / 2,
-            nodeName,
-            widget,
-            onConnectionStart=self.onLinkConnected,
-        )
-
-        # Add label
-        label = QGraphicsSimpleTextItem(nodeName, parent=widget)
-        label.setPos(x + 5, y)
-
-    def onLinkConnected(
+    def addConnectionWidget(
         self,
-        sourceNodeDraggableLink: DraggableLinkSquare,
-        targetNodeDraggableLink: DraggableLinkSquare,
+        sourceNode: CircuitNode,
+        targetNode: CircuitNode,
+        line: TransmissionLineNode | None,
     ):
-        (canLink, nodeName) = self.onElementLinked(
-            sourceNodeDraggableLink.nodeName, targetNodeDraggableLink.nodeName
-        )
-        if canLink:
-            self.scene().addItem(
-                LinkLineItem(sourceNodeDraggableLink, targetNodeDraggableLink, nodeName)
-            )
+        sourceWidget = self.simulatorWidgets[sourceNode.id].link
+        targetWidget = self.simulatorWidgets[targetNode.id].link
+        self.scene().addItem(LinkLineItem(sourceWidget, targetWidget, line))
 
     # TODO handle deletion. must sync with simulator state
     # def keyPressEvent(self, event):

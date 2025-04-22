@@ -12,62 +12,80 @@ from models.circuit_node import (
 
 
 class SimulatorState:
+    __instance = None
+
+    @staticmethod
+    def instance():
+        if SimulatorState.__instance is None:
+            SimulatorState.__instance = SimulatorState()
+        return SimulatorState.__instance
+
     def __init__(self):
         self.elements = dict()
         self.network = pypsa.Network()
+        self.onWireCreated: Callable[
+            [CircuitNode, CircuitNode, TransmissionLineNode], None
+        ]
+        self.onNodeCreated: Callable[[CircuitNode], None] = None
 
-    def setNode(self, node: CircuitNode, overwrite: bool = False) -> str:
-        self.elements.setdefault(node.name, node)
+    def addBus(self) -> None:
+        bus = BusNode(v_nom=1)
+        self.setElement(bus)
+        self.onNodeCreated(bus)
+
+    def addGenerator(self) -> None:
+        generator = GeneratorNode(p_set=1, control="GM")
+        self.setElement(generator)
+        self.onNodeCreated(generator)
+
+    def addLoad(self) -> None:
+        load = LoadNode(p_set=1)
+        self.setElement(load)
+        self.onNodeCreated(load)
+
+    def setElement(self, node: CircuitNode) -> None:
+        self.elements.setdefault(node.id, node)
         if isinstance(node, BusNode):
             self.network.add(
-                node.type, node.name, v_nom=node.v_nom, overwrite=overwrite
+                node.type,
+                node.id,
+                v_nom=node.v_nom,
+                overwrite=True,
             )
         elif isinstance(node, GeneratorNode):
             self.network.add(
                 node.type,
-                node.name,
+                node.id,
                 p_set=node.p_set,
                 control=node.control,
-                bus=node.busName,
-                overwrite=overwrite,
+                bus=node.busId,
+                overwrite=True,
             )
         elif isinstance(node, LoadNode):
             self.network.add(
                 node.type,
-                node.name,
+                node.id,
                 p_set=node.p_set,
-                bus=node.busName,
-                overwrite=overwrite,
+                bus=node.busId,
+                overwrite=True,
             )
         elif isinstance(node, TransmissionLineNode):
             self.network.add(
                 node.type,
-                node.name,
-                bus0=node.sourceBusName,
-                bus1=node.targetBusName,
+                node.id,
+                bus0=node.sourceId,
+                bus1=node.targetId,
                 x=node.x,
                 r=node.r,
-                overwrite=overwrite,
+                overwrite=True,
             )
         else:
             raise ValueError(f"Unknown node type: {node.type}")
-        return node.name
 
-    def removeElement(self, element: CircuitNode):
-        # todo
-        # handle disconnection
-        pass
-
-    def connect(self, sourceName: str, targetName: str) -> Tuple[bool, str]:
-        sourceNode = self.elements.get(sourceName)
-        targetNode = self.elements.get(targetName)
-        if sourceNode is None or targetNode is None:
-            print("Cannot connect non-existing elements")
-            return (False, None)
-
+    def addConnection(self, sourceNode: CircuitNode, targetNode: CircuitNode) -> None:
         if not isinstance(sourceNode, BusNode) and not isinstance(targetNode, BusNode):
             print("Cannot connect non-bus elements")
-            return (False, None)
+            return
 
         busNode: BusNode = None
         otherNode: CircuitNode = None
@@ -79,51 +97,52 @@ class SimulatorState:
             otherNode = sourceNode
 
         if isinstance(otherNode, BusNode):
-            if otherNode.name in busNode.connectionNames:
+            if otherNode.id in busNode.connectionIds:
                 print(
-                    f"Connection already exists between {busNode.name} and {otherNode.name}"
+                    f"Connection already exists between {busNode.id} and {otherNode.id}"
                 )
-                return (False, None)
+                return
 
-            busNode.connectionNames.append(otherNode.name)
-            otherNode.connectionNames.append(busNode.name)
-            line = TransmissionLineNode(0.1, 0.01, busNode.name, otherNode.name)
-            self.setNode(line)
+            busNode.connectionIds.append(otherNode.id)
+            otherNode.connectionIds.append(busNode.id)
+            line = TransmissionLineNode(0.1, 0.01, busNode.id, otherNode.id)
+            self.setElement(line)
 
-            print(f"{line} created between {busNode.name} and {otherNode.name}")
-            return (True, line.name)
+            print(f"{line} created between {busNode.id} and {otherNode.id}")
+            self.onWireCreated(busNode, otherNode, line)
+            return
 
         if isinstance(otherNode, GeneratorNode):
-            if otherNode.name in busNode.connectionNames:
-                print(
-                    f"Connection already exists between {busNode.name} and {otherNode.name}"
-                )
-                return (False, None)
+            if otherNode.busId:
+                print(f"{otherNode.id} already connected")
+                return
 
-            busNode.connectionNames.append(otherNode.name)
-            otherNode.busName = busNode.name
-            self.setNode(otherNode, overwrite=True)
-            print(f"{otherNode} connected to {busNode.name}")
-            return (True, None)
+            busNode.connectionIds.append(otherNode.id)
+            otherNode.busId = busNode.id
+            self.setElement(otherNode)
+            print(f"{otherNode} connected to {busNode.id}")
+            self.onWireCreated(busNode, otherNode, None)
+            return
 
         if isinstance(otherNode, LoadNode):
-            if otherNode.name in busNode.connectionNames:
-                print(
-                    f"Connection already exists between {busNode.name} and {otherNode.name}"
-                )
-                return (False, None)
+            if otherNode.busId:
+                print(f"{otherNode.id} already connected")
+                return
 
-            busNode.connectionNames.append(otherNode.name)
-            otherNode.busName = busNode.name
-            self.setNode(otherNode, overwrite=True)
-            print(f"{otherNode} connected to {busNode.name}")
-            return (True, None)
-
-        return (False, None)
+            busNode.connectionIds.append(otherNode.id)
+            otherNode.busId = busNode.id
+            self.setElement(otherNode)
+            print(f"{otherNode} connected to {busNode.id}")
+            self.onWireCreated(busNode, otherNode, None)
+            return
+        return
 
     def runPowerFlow(self):
-        self.network.pf()
-        print("Power flow results:")
-        print(self.network.lines_t.p0)
-        print(self.network.buses_t.v_ang * 180 / np.pi)
-        print(self.network.buses_t.v_mag_pu)
+        try:
+            self.network.pf()
+            print("Power flow results:")
+            print(self.network.lines_t.p0)
+            print(self.network.buses_t.v_ang * 180 / np.pi)
+            print(self.network.buses_t.v_mag_pu)
+        except Exception as e:
+            print(f"Power flow failed: {e}")
