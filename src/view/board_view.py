@@ -32,6 +32,7 @@ class BoardView(QGraphicsView):
             return
         
         # Adds line between two components in the board
+        # TODO bug: somethimes not creating wire or TL when there is a block selected
         if event is ElementEvent.CREATED and isinstance(element, ConnectionElement):
             sourceWidget = self.simulatorWidgets[element.sourceId].link
             targetWidget = self.simulatorWidgets[element.targetId].link
