@@ -3,39 +3,95 @@ from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QPushButton,
-    QLineEdit,
 )
-from PySide6.QtWidgets import QLabel
-from PySide6.QtCore import QTimer
 
+from controllers.simulator_controller import SimulatorController
+
+from enums.element_event import ElementEvent
+from models.circuit_element import CircuitElement
 from models.load import LoadNode
+from view.circuit_tiles.tile_field import (
+    NotEmptyValidator,
+    NumberValidator,
+    TextField,
+    TitleLabel,
+)
 
 
 class LoadTile(QWidget):
     def __init__(self, node: LoadNode):
         super().__init__()
         self.node: LoadNode = node
-
-        self._pending_title = QLabel(self.node.type)
-        self._pending_title.setStyleSheet("font-size: 16px; font-weight: bold;")
-        QTimer.singleShot(0, lambda: self.layout().insertWidget(0, self._pending_title))
+        self.simulatorController = SimulatorController.instance()
+        self.simulatorController.listen(self.circuitListener)
 
         layout = QVBoxLayout(self)
-        self.nameField = QLineEdit()
-        self.nameField.setPlaceholderText("Name")
-        self.nameField.setText(node.name)
+        self._pending_title = TitleLabel(self.node.type)
+        layout.addWidget(self._pending_title)
+
+        self.nameField = TextField(
+            title="name", value=node.name, type=str, validators=[NotEmptyValidator()]
+        )
         layout.addWidget(self.nameField)
 
-        self.powerField = QLineEdit()
-        self.powerField.setPlaceholderText("Power")
-        self.powerField.setText(str(node.p_set))
+        self.busField = TextField(
+            title="bus",
+            value=(
+                self.simulatorController.getElementById(node.getBusId()).name
+                if node.getBusId()
+                else ""
+            ),
+            type=str,
+            validators=[],
+            enabled=False,
+        )
+        layout.addWidget(self.busField)
+
+        self.powerField = TextField[float](
+            title="p set",
+            value=node.p_set,
+            trailing="kVA",
+            type=float,
+            validators=[NotEmptyValidator(), NumberValidator(min=0)],
+        )
         layout.addWidget(self.powerField)
 
         def _submit_node_edition():
+            for validator in [
+                self.nameField.validate,
+                self.powerField.validate,
+            ]:
+                if not validator():
+                    return
+
             copy = self.node.copy()
-            copy.name = self.nameField.text()
-            pass
+
+            copy.name = self.nameField.getValue()
+            copy.p_set = self.powerField.getValue()
+            self.simulatorController.updateElement(copy)
 
         self.submit_button = QPushButton("Submit")
         self.submit_button.clicked.connect(_submit_node_edition)
         layout.addWidget(self.submit_button)
+        simulatorInstance = SimulatorController.instance()
+        simulatorInstance.listen(self.circuitListener)
+
+    def circuitListener(self, element: CircuitElement, event: ElementEvent):
+        if (
+            event == ElementEvent.UPDATED
+            and element.id == self.node.id
+            and isinstance(element, LoadNode)
+        ):
+            self.nameField.setValue(element.name)
+            self.powerField.setValue(element.p_set)
+            self.busField.setValue(
+                self.simulatorController.getElementById(element.getBusId()).name
+                if element.getBusId()
+                else ""
+            )
+            self.node = element
+            return
+
+        if event == ElementEvent.UPDATED and element.id == self.node.getBusId():
+            self.busField.setValue(element.name)
+            return

@@ -3,15 +3,18 @@ from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QPushButton,
-    QLineEdit,
 )
 
 from controllers.simulator_controller import ElementEvent, SimulatorController
-from PySide6.QtWidgets import QLabel
-from PySide6.QtCore import QTimer
 
 from models.bus import BusNode
 from models.circuit_element import CircuitElement
+from view.circuit_tiles.tile_field import (
+    NotEmptyValidator,
+    NumberValidator,
+    TextField,
+    TitleLabel,
+)
 
 
 class BusNodeTile(QWidget):
@@ -19,38 +22,40 @@ class BusNodeTile(QWidget):
         super().__init__()
         self.node: BusNode = node
 
-        self._pending_title = QLabel(self.node.type)
-        self._pending_title.setStyleSheet("font-size: 16px; font-weight: bold;")
-        QTimer.singleShot(0, lambda: self.layout().insertWidget(0, self._pending_title))
-
         layout = QVBoxLayout(self)
-        self.nameField = QLineEdit()
-        self.nameField.setPlaceholderText("Name")
-        self.nameField.setText(node.name)
+        self._pending_title = TitleLabel(self.node.type)
+        layout.addWidget(self._pending_title)
+
+        self.nameField = TextField(
+            title="name", value=node.name, type=str, validators=[NotEmptyValidator()]
+        )
         layout.addWidget(self.nameField)
 
-        self.voltageField = QLineEdit()
-        self.voltageField.setPlaceholderText("Voltage")
-        self.voltageField.setText(str(node.v_nom))
+        self.voltageField = TextField[float](
+            title="v nom",
+            value=node.v_nom,
+            trailing="kV",
+            type=float,
+            validators=[NotEmptyValidator(), NumberValidator(min=0)],
+        )
         layout.addWidget(self.voltageField)
 
         def _submit_node_edition():
+            for validator in [self.nameField.validate, self.voltageField.validate]:
+                if not validator():
+                    return
+
             copy = self.node.copy()
-            copy.name = self.nameField.text()
-            try:
-                v_nom = float(self.voltageField.text())
-                if v_nom < 0:
-                    raise ValueError("Voltage must be positive")
-                self.node.v_nom = v_nom
-                SimulatorController.instance().updateElement(copy)
-            except ValueError:
-                pass
+
+            copy.name = self.nameField.getValue()
+            copy.v_nom = self.voltageField.getValue()
+            SimulatorController.instance().updateElement(copy)
 
         self.submit_button = QPushButton("Submit")
         self.submit_button.clicked.connect(_submit_node_edition)
         layout.addWidget(self.submit_button)
         simulatorInstance = SimulatorController.instance()
-        simulatorInstance.listeners.append(self.circuitListener)
+        simulatorInstance.listen(self.circuitListener)
 
     def circuitListener(self, element: CircuitElement, event: ElementEvent):
         if (
@@ -59,5 +64,5 @@ class BusNodeTile(QWidget):
             and isinstance(element, BusNode)
         ):
             self.node = element
-            self.nameField.setText(element.name)
-            self.voltageField.setText(str(element.v_nom))
+            self.nameField.setValue(element.name)
+            self.voltageField.setValue(str(element.v_nom))

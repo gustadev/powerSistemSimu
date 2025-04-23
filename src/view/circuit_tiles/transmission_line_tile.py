@@ -1,4 +1,3 @@
-
 from typing import *
 from PySide6.QtWidgets import (
     QWidget,
@@ -10,11 +9,76 @@ from controllers.simulator_controller import ElementEvent, SimulatorController
 from PySide6.QtWidgets import QLabel
 
 
+from models.bus import BusNode
 from models.circuit_element import CircuitElement
 from models.transmission_line import TransmissionLineElement
+from view.circuit_tiles.tile_field import (
+    NotEmptyValidator,
+    NumberValidator,
+    TextField,
+    TitleLabel,
+)
 
 
 class TransmissionLineTile(QWidget):
+
+    def __init__(self, line: TransmissionLineElement):
+        super().__init__()
+        self.line: TransmissionLineElement = line
+
+        layout = QVBoxLayout(self)
+        self._pending_title = TitleLabel(self.line.type)
+        layout.addWidget(self._pending_title)
+
+        self.simulatorInstance = SimulatorController.instance()
+        self.simulatorInstance.listen(self.circuitListener)
+        sourceName = self.simulatorInstance.getElementById(line.sourceId).name
+        targetName = self.simulatorInstance.getElementById(line.targetId).name
+
+        self.sourceLabel = QLabel(f"From: {sourceName}, To: {targetName}")
+        layout.addWidget(self.sourceLabel)
+
+        self.nameField = TextField(
+            title="name", value=line.name, type=str, validators=[NotEmptyValidator()]
+        )
+        layout.addWidget(self.nameField)
+
+        self.resistanceField = TextField[float](
+            title="r",
+            value=line.resistance,
+            trailing="ohm",
+            type=float,
+            validators=[NotEmptyValidator(), NumberValidator(min=0)],
+        )
+        layout.addWidget(self.resistanceField)
+
+        self.reactanceField = TextField[float](
+            title="x",
+            value=line.reactance,
+            trailing="ohm",
+            type=float,
+            validators=[NotEmptyValidator(), NumberValidator()],
+        )
+        layout.addWidget(self.reactanceField)
+
+        def _submit_line_edit():
+            for validator in [
+                self.nameField.validate,
+                self.resistanceField.validate,
+                self.reactanceField.validate,
+            ]:
+                if not validator():
+                    return
+
+            copy = self.line.copy()
+            copy.name = self.nameField.getValue()
+            copy.resistance = self.resistanceField.getValue()
+            copy.reactance = self.reactanceField.getValue()
+            SimulatorController.instance().updateElement(copy)
+
+        submit_button = QPushButton("Submit")
+        submit_button.clicked.connect(_submit_line_edit)
+        layout.addWidget(submit_button)
 
     def circuitListener(self, element: CircuitElement, event: ElementEvent):
         if (
@@ -22,66 +86,32 @@ class TransmissionLineTile(QWidget):
             and element.id == self.line.id
             and isinstance(element, TransmissionLineElement)
         ):
-            self.simulatorInstance = SimulatorController.instance()
-            self.simulatorInstance.listeners.append(self.circuitListener)
-            sourceName = self.simulatorInstance.elements[element.sourceId].name
-            targetName = self.simulatorInstance.elements[element.targetId].name
+            sourceName = self.simulatorInstance.getElementById(element.sourceId).name
+            targetName = self.simulatorInstance.getElementById(element.targetId).name
             self.sourceLabel.setText(f"From: {sourceName}, To: {targetName}")
-            self.name.setText(element.name)
-            self.r.setText(str(element.r))
-            self.x.setText(str(element.x))
+            self.nameField.setValue(element.name)
+            self.resistanceField.setValue(element.resistance)
+            self.reactanceField.setValue(element.reactance)
             self.line = element
+            return
 
-    def __init__(self, line: TransmissionLineElement):
-        super().__init__()
-        self.line: TransmissionLineElement = line
+        if (
+            event is ElementEvent.UPDATED
+            and isinstance(element, BusNode)
+            and element.id == self.line.sourceId
+        ):
+            self.sourceLabel.setText(
+                f"From: {element.name}, To: {self.simulatorInstance.getElementById(self.line.targetId).name}"
+            )
+            return
 
-        layout = QVBoxLayout(self)
-        title = QLabel("Transmission Line")
-        title.setStyleSheet("font-size: 16px; font-weight: bold;")
-        layout.addWidget(title)
+        if (
+            event is ElementEvent.UPDATED
+            and isinstance(element, BusNode)
+            and element.id == self.line.targetId
+        ):
 
-        self.simulatorInstance = SimulatorController.instance()
-        self.simulatorInstance.listeners.append(self.circuitListener)
-        sourceName = self.simulatorInstance.elements[line.sourceId].name
-        targetName = self.simulatorInstance.elements[line.targetId].name
-
-        self.sourceLabel = QLabel(f"From: {sourceName}, To: {targetName}")
-        layout.addWidget(self.sourceLabel)
-
-        self.name = QLineEdit()
-        self.name.setPlaceholderText("Name")
-        self.name.setText(line.name)
-        layout.addWidget(self.name)
-
-        self.r = QLineEdit()
-        self.r.setPlaceholderText("r")
-        self.r.setText(str(line.r))
-        layout.addWidget(self.r)
-
-        self.x = QLineEdit()
-        self.x.setPlaceholderText("x")
-        self.x.setText(str(line.x))
-        layout.addWidget(self.x)
-
-        def _submit_line_edit():
-            copy = self.line.copy()
-            copy.name = self.name.text()
-            try:
-                r = float(self.r.text())
-                if r < 0:
-                    raise ValueError("r must be positive")
-                copy.r = r
-                x = float(self.x.text())
-                if x < 0:
-                    raise ValueError("x must be positive")
-                copy.x = x
-                SimulatorController.instance().updateElement(copy)
-            except ValueError:
-                pass
-
-        submit_button = QPushButton("Submit")
-        submit_button.clicked.connect(_submit_line_edit)
-        layout.addWidget(submit_button)
-
-
+            self.sourceLabel.setText(
+                f"From: {self.simulatorInstance.getElementById(self.line.sourceId).name}, To: {element.name}"
+            )
+            return

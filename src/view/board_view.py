@@ -20,7 +20,7 @@ class BoardView(QGraphicsView):
         self.setSceneRect(0, 0, 600, 400)
         self.simulatorWidgets = dict()
         simulatorInstance = SimulatorController.instance()
-        simulatorInstance.listeners.append(self.circuitListener)
+        simulatorInstance.listen(self.circuitListener)
 
     # Listens to the simulator events and updates the board
     def circuitListener(self, element: CircuitElement, event: ElementEvent):

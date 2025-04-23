@@ -22,7 +22,7 @@ class CircuitNodeWidget(QGraphicsRectItem):
 
         self.label = QGraphicsSimpleTextItem(node.name, parent=self)
         self.label.setPos(x + 5, y)
-        SimulatorController.instance().listeners.append(self.circuitListener)
+        SimulatorController.instance().listen(self.circuitListener)
 
     def circuitListener(self, node: CircuitElement, event: ElementEvent):
         if event == ElementEvent.UPDATED and node.id == self.node.id:

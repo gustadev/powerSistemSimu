@@ -30,7 +30,7 @@ class LinkLineItem(QGraphicsLineItem):
             self.nameLabel = QGraphicsSimpleTextItem(connection.name)
             self.nameLabel.setBrush(Qt.white)
             self.nameLabel.setParentItem(self)
-            SimulatorController.instance().listeners.append(self.circuitListener)
+            SimulatorController.instance().listen(self.circuitListener)
 
     def updatePosition(self):
         p1 = self.sourceNodeDraggableLink.sceneBoundingRect().center()

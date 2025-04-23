@@ -22,21 +22,24 @@ class SimulatorController:
         return SimulatorController.__instance
 
     def __init__(self):
-        self.elements = dict()
-        self.network = pypsa.Network()
-        self.listeners: list[Callable[[CircuitElement, ElementEvent], None]] = []
+        self.__elements = dict()
+        self.__network = pypsa.Network()
+        self.__listeners: list[Callable[[CircuitElement, ElementEvent], None]] = []
+
+    def listen(self, callback: Callable[[CircuitElement, ElementEvent], None]) -> None:
+        self.__listeners.append(callback)
 
     def __updateElement(self, node: CircuitElement, event: ElementEvent | None) -> None:
-        self.elements[node.id] = node
+        self.__elements[node.id] = node
         if isinstance(node, BusNode):
-            self.network.add(
+            self.__network.add(
                 node.type,
                 node.id,
                 v_nom=node.v_nom,
                 overwrite=True,
             )
         elif isinstance(node, GeneratorNode):
-            self.network.add(
+            self.__network.add(
                 node.type,
                 node.id,
                 p_set=node.p_set,
@@ -45,7 +48,7 @@ class SimulatorController:
                 overwrite=True,
             )
         elif isinstance(node, LoadNode):
-            self.network.add(
+            self.__network.add(
                 node.type,
                 node.id,
                 p_set=node.p_set,
@@ -53,17 +56,17 @@ class SimulatorController:
                 overwrite=True,
             )
         elif isinstance(node, TransmissionLineElement):
-            self.network.add(
+            self.__network.add(
                 node.type,
                 node.id,
                 bus0=node.sourceId,
                 bus1=node.targetId,
-                x=node.x,
-                r=node.r,
+                x=node.reactance,
+                r=node.resistance,
                 overwrite=True,
             )
         if event:
-            for callback in self.listeners:
+            for callback in self.__listeners:
                 callback(node, event)
 
     def addBus(self) -> None:
@@ -122,18 +125,23 @@ class SimulatorController:
             self.__updateElement(otherNode, ElementEvent.UPDATED)
 
     def updateElement(self, node: CircuitElement) -> None:
-        if node.id not in self.elements:
+        if node.id not in self.__elements:
             print(f"Element {node.name} not found")
             return
 
         self.__updateElement(node, ElementEvent.UPDATED)
 
+    def getElementById(self, id: str) -> CircuitElement | None:
+        if id in self.__elements:
+            return self.__elements[id]
+        return None
+
     def runPowerFlow(self):
         try:
-            self.network.pf()
+            self.__network.pf()
             print("Power flow results:")
-            print(self.network.lines_t.p0)
-            print(self.network.buses_t.v_ang * 180 / np.pi)
-            print(self.network.buses_t.v_mag_pu)
+            print(self.__network.lines_t.p0)
+            print(self.__network.buses_t.v_ang * 180 / np.pi)
+            print(self.__network.buses_t.v_mag_pu)
         except Exception as e:
             print(f"Power flow failed: {e}")
