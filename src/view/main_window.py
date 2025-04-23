@@ -4,10 +4,12 @@ from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QPushButton,
+    QHBoxLayout
 )
 
-from components.board_view import BoardView
-from models.simulator_state import SimulatorState
+from controllers.simulator_controller import SimulatorController
+from view.board_view import BoardView
+from view.element_list import ElementList
 
 
 class MainWindow(QMainWindow):
@@ -23,7 +25,7 @@ class MainWindow(QMainWindow):
 
         # Create the board view.
         board = BoardView()
-        simulatorInstance = SimulatorState.instance()
+        simulatorInstance = SimulatorController.instance()
 
         # Connect button signal to the board's addSquare method.
         addBusButton.clicked.connect(simulatorInstance.addBus)
@@ -36,6 +38,16 @@ class MainWindow(QMainWindow):
         layout.addWidget(addGeneratorButton)
         layout.addWidget(addLoadButton)
         layout.addWidget(board)
+
+        # Create a horizontal layout to place the board view on the left and a new widget on the right.
+        horizontalLayout = QHBoxLayout()
+        horizontalLayout.addWidget(board)
+        
+        rightWidget = ElementList()
+        rightWidget.setMinimumWidth(200)  # Adjust the width as needed.
+        horizontalLayout.addWidget(rightWidget)
+        
+        layout.addLayout(horizontalLayout)
         layout.addWidget(runPowerFlowButton)
 
         self.setCentralWidget(centralWidget)

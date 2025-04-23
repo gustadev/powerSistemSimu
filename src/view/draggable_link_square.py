@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPen
 
-from models.simulator_state import SimulatorState
+from controllers.simulator_controller import SimulatorController
 
 
 class DraggableLinkSquare(QGraphicsRectItem):
@@ -52,5 +52,5 @@ class DraggableLinkSquare(QGraphicsRectItem):
                 target = item
             break
         if target:
-            SimulatorState.instance().addConnection(self.parent.node, target.parent.node)
+            SimulatorController.instance().addConnection(self.parent.node, target.parent.node)
         event.accept()
