@@ -55,8 +55,8 @@ class GeneratorTile(QWidget):
         layout.addWidget(self.busField)
 
         self.powerField = TextField[float](
-            title="p set",
-            value=node.p_set,
+            title="power",
+            value=node.nominalPower,
             trailing="kVA",
             type=float,
             validators=[NotEmptyValidator(), NumberValidator(min=0)],
@@ -75,7 +75,7 @@ class GeneratorTile(QWidget):
             copy = self.node.copy()
 
             copy.name = self.nameField.getValue()
-            copy.p_set = self.powerField.getValue()
+            copy.nominalPower = self.powerField.getValue()
             copy.control = self.controlField.getValue()
             self.simulatorController.updateElement(copy)
 
@@ -92,7 +92,7 @@ class GeneratorTile(QWidget):
             and isinstance(element, GeneratorNode)
         ):
             self.nameField.setValue(element.name)
-            self.powerField.setValue(element.p_set)
+            self.powerField.setValue(element.nominalPower)
             self.controlField.setValue(element.control)
             self.busField.setValue(
                 self.simulatorController.getElementById(element.getBusId()).name

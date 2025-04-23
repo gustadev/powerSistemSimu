@@ -42,7 +42,7 @@ class SimulatorController:
             self.__network.add(
                 node.type,
                 node.id,
-                p_set=node.p_set,
+                p_nom=node.nominalPower,
                 control=node.control,
                 bus=node.getBusId(),
                 overwrite=True,
@@ -145,3 +145,11 @@ class SimulatorController:
             print(self.__network.buses_t.v_mag_pu)
         except Exception as e:
             print(f"Power flow failed: {e}")
+
+    def printNetwork(self):
+        print("Network:")
+        print(self.__network.lines)
+        print(self.__network.buses)
+        print(self.__network.generators)
+        print(self.__network.loads)
+        print(self.__network.links)

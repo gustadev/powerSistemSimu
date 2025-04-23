@@ -22,6 +22,7 @@ class MainWindow(QMainWindow):
         addGeneratorButton = QPushButton("Add Generator")
         addLoadButton = QPushButton("Add Load")
         runPowerFlowButton = QPushButton("Run Power Flow")
+        printNetworkButton = QPushButton("Print Network")
 
         # Create the board view.
         board = BoardView()
@@ -32,6 +33,7 @@ class MainWindow(QMainWindow):
         addLoadButton.clicked.connect(simulatorInstance.addLoad)
         addGeneratorButton.clicked.connect(simulatorInstance.addGenerator)
         runPowerFlowButton.clicked.connect(simulatorInstance.runPowerFlow)
+        printNetworkButton.clicked.connect(simulatorInstance.printNetwork)
 
         # Add widgets to the layout.
         layout.addWidget(addBusButton)
@@ -49,5 +51,6 @@ class MainWindow(QMainWindow):
         
         layout.addLayout(horizontalLayout)
         layout.addWidget(runPowerFlowButton)
+        layout.addWidget(printNetworkButton)
 
         self.setCentralWidget(centralWidget)

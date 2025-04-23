@@ -6,7 +6,7 @@ class GeneratorNode(CircuitNode):
         self,
         id: str = None,
         name: str = None,
-        p_set: float = 1,
+        nominalPower: float = 1,
         control: str = "GM",
         busId: str = None,
     ):
@@ -17,7 +17,7 @@ class GeneratorNode(CircuitNode):
             connectionIds=[busId] if busId else [],
         )
         self.control: str = control
-        self.p_set: float = p_set
+        self.nominalPower: float = nominalPower
 
     def getBusId(self) -> str | None:
         return self.connectionIds[0] if len(self.connectionIds) > 0 else None
@@ -25,7 +25,7 @@ class GeneratorNode(CircuitNode):
     def copy(self):
         return GeneratorNode(
             name=self.name,
-            p_set=self.p_set,
+            nominalPower=self.nominalPower,
             control=self.control,
             busId=self.connectionIds[0] if len(self.connectionIds) > 0 else None,
             id=self.id,
