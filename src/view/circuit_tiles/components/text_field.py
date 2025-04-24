@@ -3,18 +3,10 @@ from typing import *
 from PySide6.QtWidgets import QLabel
 from PySide6.QtWidgets import QHBoxLayout
 from typing import cast
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QPushButton,
-    QLineEdit,
-)
+from PySide6.QtWidgets import QWidget, QLineEdit
 
 
-class TitleLabel(QLabel):
-    def __init__(self, text: str):
-        super().__init__(text=text)
-        self.setStyleSheet("font-size: 16px; font-weight: bold;")
+from typing import Generic, Type, TypeVar
 
 
 class TextValidator:
@@ -46,9 +38,11 @@ class NumberValidator(TextValidator):
         except ValueError:
             return f"{title} must be a number"
 
+
 T = TypeVar("Type", str, int, float)
 
-class TextField(Generic[T],QWidget):
+
+class TextField(Generic[T], QWidget):
     def __init__(
         self,
         title: str,
@@ -59,7 +53,7 @@ class TextField(Generic[T],QWidget):
         validators: list[TextValidator] = [NotEmptyValidator()],
     ):
         super().__init__()
-        self.setEnabled(enabled) 
+        self.setEnabled(enabled)
         self.title = title
         self.type = type
         self.validators = validators

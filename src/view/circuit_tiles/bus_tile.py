@@ -1,68 +1,42 @@
 from typing import *
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QPushButton,
-)
+from PySide6.QtWidgets import QVBoxLayout
 
-from controllers.simulator_controller import ElementEvent, SimulatorController
+from controllers.simulator_controller import SimulatorController
 
 from models.bus import BusNode
-from models.circuit_element import CircuitElement
-from view.circuit_tiles.tile_field import (
+from view.circuit_tiles.components.element_tile import ElementTile
+from view.circuit_tiles.components.text_field import (
     NotEmptyValidator,
     NumberValidator,
     TextField,
-    TitleLabel,
 )
 
 
-class BusNodeTile(QWidget):
-    def __init__(self, node: BusNode):
-        super().__init__()
-        self.node: BusNode = node
+class BusNodeTile(ElementTile[BusNode]):
+    def __init__(self, element: BusNode):
+        super().__init__(element=element, type=BusNode)
 
-        layout = QVBoxLayout(self)
-        self._pending_title = TitleLabel(self.node.type)
-        layout.addWidget(self._pending_title)
-
-        self.nameField = TextField(
-            title="name", value=node.name, type=str, validators=[NotEmptyValidator()]
-        )
-        layout.addWidget(self.nameField)
-
+    def build_form(self, layout: QVBoxLayout):
+        super().build_form(layout)
         self.voltageField = TextField[float](
-            title="v nom",
-            value=node.v_nom,
+            title="v_nom",
             trailing="kV",
             type=float,
             validators=[NotEmptyValidator(), NumberValidator(min=0)],
         )
         layout.addWidget(self.voltageField)
 
-        def _submit_node_edition():
-            for validator in [self.nameField.validate, self.voltageField.validate]:
-                if not validator():
-                    return
+    def update_form_values(self):
+        super().update_form_values()
+        self.voltageField.setValue(self.element.v_nom)
 
-            copy = self.node.copyWith()
+    def edit(self):
+        for validator in [self.nameField.validate, self.voltageField.validate]:
+            if not validator():
+                return
 
-            copy.name = self.nameField.getValue()
-            copy.v_nom = self.voltageField.getValue()
-            SimulatorController.instance().updateElement(copy)
+        copy = self.element.copyWith(
+            name=self.nameField.getValue(), v_nom=self.voltageField.getValue()
+        )
 
-        self.submit_button = QPushButton("Submit")
-        self.submit_button.clicked.connect(_submit_node_edition)
-        layout.addWidget(self.submit_button)
-        simulatorInstance = SimulatorController.instance()
-        simulatorInstance.listen(self.circuitListener)
-
-    def circuitListener(self, element: CircuitElement, event: ElementEvent):
-        if (
-            event is ElementEvent.UPDATED
-            and element.id == self.node.id
-            and isinstance(element, BusNode)
-        ):
-            self.node = element
-            self.nameField.setValue(element.name)
-            self.voltageField.setValue(str(element.v_nom))
+        SimulatorController.instance().updateElement(copy)

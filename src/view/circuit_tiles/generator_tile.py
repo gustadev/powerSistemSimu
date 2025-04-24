@@ -1,41 +1,27 @@
 from typing import *
 from PySide6.QtWidgets import (
-    QWidget,
     QVBoxLayout,
-    QPushButton,
 )
 
 from controllers.simulator_controller import SimulatorController
 
-from enums.element_event import ElementEvent
-from models.circuit_element import CircuitElement
 from models.generator import GeneratorNode
-from view.circuit_tiles.tile_field import (
+from view.circuit_tiles.components.element_tile import ElementTile
+from view.circuit_tiles.components.text_field import (
     NotEmptyValidator,
     NumberValidator,
     TextField,
-    TitleLabel,
 )
 
 
-class GeneratorTile(QWidget):
-    def __init__(self, node: GeneratorNode):
-        super().__init__()
-        self.node: GeneratorNode = node
-        self.simulatorController = SimulatorController.instance()
-        self.simulatorController.listen(self.circuitListener)
+class GeneratorTile(ElementTile[GeneratorNode]):
+    def __init__(self, element: GeneratorNode):
+        super().__init__(element=element, type=GeneratorNode)
 
-        layout = QVBoxLayout(self)
-        self._pending_title = TitleLabel(self.node.type)
-        layout.addWidget(self._pending_title)
-
-        self.nameField = TextField(
-            title="name", value=node.name, type=str, validators=[NotEmptyValidator()]
-        )
-        layout.addWidget(self.nameField)
+    def build_form(self, layout: QVBoxLayout):
+        super().build_form(layout)
         self.controlField = TextField(
             title="control",
-            value=node.control,
             type=str,
             validators=[NotEmptyValidator()],
         )
@@ -43,65 +29,44 @@ class GeneratorTile(QWidget):
 
         self.busField = TextField(
             title="bus",
-            value=(
-                self.simulatorController.getElementById(node.connection_id).name
-                if node.connection_id
-                else ""
-            ),
             type=str,
-            validators=[],
             enabled=False,
         )
         layout.addWidget(self.busField)
 
         self.powerField = TextField[float](
             title="power",
-            value=node.nominal_power,
             trailing="kVA",
             type=float,
             validators=[NotEmptyValidator(), NumberValidator(min=0)],
         )
         layout.addWidget(self.powerField)
 
-        def _submit_node_edition():
-            for validator in [
-                self.nameField.validate,
-                self.controlField.validate,
-                self.powerField.validate,
-            ]:
-                if not validator():
-                    return
+    def update_form_values(self):
+        super().update_form_values()
+        self.controlField.setValue(self.element.control)
+        self.busField.setValue(
+            SimulatorController.instance()
+            .getElementById(self.element.connection_id)
+            .name
+            if self.element.connection_id
+            else ""
+        )
+        self.powerField.setValue(self.element.nominal_power)
 
-            copy = self.node.copy()
+    def edit(self):
+        for validator in [
+            self.nameField.validate,
+            self.controlField.validate,
+            self.powerField.validate,
+        ]:
+            if not validator():
+                return
 
-            copy.name = self.nameField.getValue()
-            copy.nominalPower = self.powerField.getValue()
-            copy.control = self.controlField.getValue()
-            self.simulatorController.updateElement(copy)
+        copy = self.element.copyWith(
+            name=self.nameField.getValue(),
+            control=self.controlField.getValue(),
+            nominal_power=self.powerField.getValue(),
+        )
 
-        self.submit_button = QPushButton("Submit")
-        self.submit_button.clicked.connect(_submit_node_edition)
-        layout.addWidget(self.submit_button)
-        simulatorInstance = SimulatorController.instance()
-        simulatorInstance.listen(self.circuitListener)
-
-    def circuitListener(self, element: CircuitElement, event: ElementEvent):
-        if (
-            event == ElementEvent.UPDATED
-            and element.id == self.node.id
-            and isinstance(element, GeneratorNode)
-        ):
-            self.nameField.setValue(element.name)
-            self.powerField.setValue(element.nominal_power)
-            self.controlField.setValue(element.control)
-            self.busField.setValue(
-                self.simulatorController.getElementById(element.connection_id).name
-                if element.connection_id
-                else ""
-            )
-            self.node = element
-            return
-
-        if event == ElementEvent.UPDATED and element.id == self.node.connection_id:
-            self.busField.setValue(element.name)
-            return
+        SimulatorController.instance().updateElement(copy)

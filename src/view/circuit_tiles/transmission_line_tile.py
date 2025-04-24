@@ -1,51 +1,29 @@
 from typing import *
 from PySide6.QtWidgets import (
-    QWidget,
     QVBoxLayout,
-    QPushButton,
-    QLineEdit,
 )
-from controllers.simulator_controller import ElementEvent, SimulatorController
-from PySide6.QtWidgets import QLabel
+from controllers.simulator_controller import SimulatorController
 
 
-from models.bus import BusNode
-from models.circuit_element import CircuitElement
 from models.transmission_line import TransmissionLineElement
-from view.circuit_tiles.tile_field import (
+from view.circuit_tiles.components.element_tile import ElementTile
+from view.circuit_tiles.components.text_field import (
     NotEmptyValidator,
     NumberValidator,
     TextField,
-    TitleLabel,
 )
 
 
-class TransmissionLineTile(QWidget):
+class TransmissionLineTile(ElementTile[TransmissionLineElement]):
 
-    def __init__(self, line: TransmissionLineElement):
-        super().__init__()
-        self.line: TransmissionLineElement = line
+    def __init__(self, element: TransmissionLineElement):
+        super().__init__(element=element, type=TransmissionLineElement)
 
-        layout = QVBoxLayout(self)
-        self._pending_title = TitleLabel(self.line.type)
-        layout.addWidget(self._pending_title)
-
-        self.simulatorInstance = SimulatorController.instance()
-        self.simulatorInstance.listen(self.circuitListener)
-        sourceName = self.simulatorInstance.getElementById(line.source_id).name
-        targetName = self.simulatorInstance.getElementById(line.target_id).name
-
-        self.sourceLabel = QLabel(f"From: {sourceName}, To: {targetName}")
-        layout.addWidget(self.sourceLabel)
-
-        self.nameField = TextField(
-            title="name", value=line.name, type=str, validators=[NotEmptyValidator()]
-        )
-        layout.addWidget(self.nameField)
-
+    def build_form(self, layout: QVBoxLayout):
+        super().build_form(layout)
         self.resistanceField = TextField[float](
             title="r",
-            value=line.resistance,
+            value=self.element.resistance,
             trailing="ohm",
             type=float,
             validators=[NotEmptyValidator(), NumberValidator(min=0)],
@@ -54,64 +32,31 @@ class TransmissionLineTile(QWidget):
 
         self.reactanceField = TextField[float](
             title="x",
-            value=line.reactance,
+            value=self.element.reactance,
             trailing="ohm",
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
         )
         layout.addWidget(self.reactanceField)
 
-        def _submit_line_edit():
-            for validator in [
-                self.nameField.validate,
-                self.resistanceField.validate,
-                self.reactanceField.validate,
-            ]:
-                if not validator():
-                    return
+    def update_form_values(self):
+        super().update_form_values()
+        self.resistanceField.setValue(self.element.resistance)
+        self.reactanceField.setValue(self.element.reactance)
 
-            copy = self.line.copy()
-            copy.name = self.nameField.getValue()
-            copy.resistance = self.resistanceField.getValue()
-            copy.reactance = self.reactanceField.getValue()
-            SimulatorController.instance().updateElement(copy)
+    def edit(self):
+        for validator in [
+            self.nameField.validate,
+            self.resistanceField.validate,
+            self.reactanceField.validate,
+        ]:
+            if not validator():
+                return
 
-        submit_button = QPushButton("Submit")
-        submit_button.clicked.connect(_submit_line_edit)
-        layout.addWidget(submit_button)
+        copy = self.element.copyWith(
+            name=self.nameField.getValue(),
+            resistance=self.resistanceField.getValue(),
+            reactance=self.reactanceField.getValue(),
+        )
 
-    def circuitListener(self, element: CircuitElement, event: ElementEvent):
-        if (
-            event is ElementEvent.UPDATED
-            and element.id == self.line.id
-            and isinstance(element, TransmissionLineElement)
-        ):
-            sourceName = self.simulatorInstance.getElementById(element.source_id).name
-            targetName = self.simulatorInstance.getElementById(element.target_id).name
-            self.sourceLabel.setText(f"From: {sourceName}, To: {targetName}")
-            self.nameField.setValue(element.name)
-            self.resistanceField.setValue(element.resistance)
-            self.reactanceField.setValue(element.reactance)
-            self.line = element
-            return
-
-        if (
-            event is ElementEvent.UPDATED
-            and isinstance(element, BusNode)
-            and element.id == self.line.source_id
-        ):
-            self.sourceLabel.setText(
-                f"From: {element.name}, To: {self.simulatorInstance.getElementById(self.line.target_id).name}"
-            )
-            return
-
-        if (
-            event is ElementEvent.UPDATED
-            and isinstance(element, BusNode)
-            and element.id == self.line.target_id
-        ):
-
-            self.sourceLabel.setText(
-                f"From: {self.simulatorInstance.getElementById(self.line.source_id).name}, To: {element.name}"
-            )
-            return
+        SimulatorController.instance().updateElement(copy)
