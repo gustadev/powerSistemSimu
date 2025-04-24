@@ -38,7 +38,26 @@ class TransmissionLineTile(ElementTile[TransmissionLineElement]):
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
         )
+
         layout.addWidget(self.reactanceField)
+
+        self.conductanceField = TextField[float](
+            title="g",
+            value=self.element.conductance,
+            trailing="S",
+            type=float,
+            validators=[NotEmptyValidator(), NumberValidator()],
+        )
+        layout.addWidget(self.conductanceField)
+
+        self.susceptanceField = TextField[float](
+            title="b",
+            value=self.element.susceptance,
+            trailing="S",
+            type=float,
+            validators=[NotEmptyValidator(), NumberValidator()],
+        )
+        layout.addWidget(self.susceptanceField)
 
         self.busField = TextField(title="bus", type=str, enabled=False)
         layout.addWidget(self.busField)
@@ -47,6 +66,8 @@ class TransmissionLineTile(ElementTile[TransmissionLineElement]):
         super().update_form_values()
         self.resistanceField.setValue(self.element.resistance)
         self.reactanceField.setValue(self.element.reactance)
+        self.conductanceField.setValue(self.element.conductance)
+        self.susceptanceField.setValue(self.element.susceptance)
         self.busField.setValue(
             SimulatorController.instance().getElementNames(
                 [self.element.source_id, self.element.target_id]
@@ -66,6 +87,8 @@ class TransmissionLineTile(ElementTile[TransmissionLineElement]):
             name=self.nameField.getValue(),
             resistance=self.resistanceField.getValue(),
             reactance=self.reactanceField.getValue(),
+            conductance=self.conductanceField.getValue(),
+            susceptance=self.susceptanceField.getValue(),
         )
 
         SimulatorController.instance().updateElement(copy)

@@ -62,6 +62,8 @@ class SimulatorController:
                 bus1=node.target_id,
                 x=node.reactance,
                 r=node.resistance,
+                b=node.susceptance,
+                g=node.conductance,
                 overwrite=True,
             )
         if event:
