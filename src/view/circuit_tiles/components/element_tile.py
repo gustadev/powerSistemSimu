@@ -17,7 +17,7 @@ E = TypeVar("Type", bound=CircuitElement)
 
 
 class ElementTile(Generic[E], QWidget):
-    def __init__(self, element: CircuitElement, type: Type[E]):
+    def __init__(self, element: E, type: Type[E]):
         super().__init__()
         self.type: Type[E] = type
         self.__element: E = element
