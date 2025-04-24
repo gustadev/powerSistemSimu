@@ -37,8 +37,8 @@ class LoadTile(QWidget):
         self.busField = TextField(
             title="bus",
             value=(
-                self.simulatorController.getElementById(node.getBusId()).name
-                if node.getBusId()
+                self.simulatorController.getElementById(node.connection_id).name
+                if node.connection_id
                 else ""
             ),
             type=str,
@@ -85,13 +85,13 @@ class LoadTile(QWidget):
             self.nameField.setValue(element.name)
             self.powerField.setValue(element.p_set)
             self.busField.setValue(
-                self.simulatorController.getElementById(element.getBusId()).name
-                if element.getBusId()
+                self.simulatorController.getElementById(element.connection_id).name
+                if element.connection_id
                 else ""
             )
             self.node = element
             return
 
-        if event == ElementEvent.UPDATED and element.id == self.node.getBusId():
+        if event == ElementEvent.UPDATED and element.id == self.node.connection_id:
             self.busField.setValue(element.name)
             return

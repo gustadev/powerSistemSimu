@@ -6,10 +6,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QPainter
 
 from controllers.simulator_controller import ElementEvent, SimulatorController
-from models.circuit_element import CircuitElement, ManyConnectionsElement, DoubleConnectionElement
+from models.circuit_element import CircuitElement, DoubleConnectionElement
 from view.circuit_node_widget import CircuitNodeWidget
 from view.link_line_item import LinkLineItem
-from PySide6.QtCore import Qt
 
 
 class BoardView(QGraphicsView):
@@ -25,21 +24,24 @@ class BoardView(QGraphicsView):
     # Listens to the simulator events and updates the board
     def circuitListener(self, element: CircuitElement, event: ElementEvent):
         # Adds node component to the board
-        if event is ElementEvent.CREATED and isinstance(element, ManyConnectionsElement):
+        if event is ElementEvent.CREATED and not isinstance(
+            element, DoubleConnectionElement
+        ):
             widget = CircuitNodeWidget(50, 50, element)
             self.scene().addItem(widget)
             self.simulatorWidgets[element.id] = widget
             return
-        
+
         # Adds line between two components in the board
         # TODO bug: somethimes not creating wire or TL when there is a block selected
-        if event is ElementEvent.CREATED and isinstance(element, DoubleConnectionElement):
+        if event is ElementEvent.CREATED and isinstance(
+            element, DoubleConnectionElement
+        ):
             sourceWidget = self.simulatorWidgets[element.source_id].link
             targetWidget = self.simulatorWidgets[element.target_id].link
             self.scene().addItem(LinkLineItem(sourceWidget, targetWidget, element))
             return
-        
-       
+
     # TODO handle deletion. must sync with simulator state
     # def keyPressEvent(self, event):
     #     if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):

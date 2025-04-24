@@ -32,14 +32,18 @@ class CircuitElement:
 
 class ManyConnectionsElement(CircuitElement):
     def __init__(
-        self, node_type: str, id: str, name: str = None, connection_ids: tuple[str] = []
+        self,
+        node_type: str,
+        id: str,
+        name: str = None,
+        connection_ids: tuple[str] = tuple[str](),
     ):
         super().__init__(node_type, id, name)
         self.__connection_ids: tuple[str] = connection_ids
 
     @property
     def connection_ids(self) -> tuple[str]:
-        return tuple(self.__connection_ids)
+        return self.__connection_ids
 
 
 class DoubleConnectionElement(CircuitElement):
@@ -73,8 +77,8 @@ class SingleConnectionElement(CircuitElement):
         connection_id: str | None = None,
     ):
         super().__init__(node_type, id, name)
-        self.__connectionId: str | None = connection_id
+        self.__connection_id: str | None = connection_id
 
     @property
     def connection_id(self) -> str | None:
-        return self.__connectionId
+        return self.__connection_id

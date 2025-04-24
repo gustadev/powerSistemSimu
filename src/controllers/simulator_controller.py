@@ -1,11 +1,10 @@
-from enum import Enum
 from typing import *
 import numpy as np
 import pypsa
 
 from enums.element_event import ElementEvent
 from models.bus import BusNode
-from models.circuit_element import CircuitElement, ManyConnectionsElement, DoubleConnectionElement
+from models.circuit_element import CircuitElement, DoubleConnectionElement
 from models.generator import GeneratorNode
 from models.load import LoadNode
 from models.transmission_line import TransmissionLineElement
@@ -82,13 +81,15 @@ class SimulatorController:
         self.__updateElement(load, ElementEvent.CREATED)
 
     # TODO update everyone on links
-    def addConnection(self, sourceNode: ManyConnectionsElement, targetNode: ManyConnectionsElement) -> None:
+    def addConnection(
+        self, sourceNode: CircuitElement, targetNode: CircuitElement
+    ) -> None:
         if not isinstance(sourceNode, BusNode) and not isinstance(targetNode, BusNode):
             print("Cannot connect non-bus elements")
             return
 
         busNode: BusNode = None
-        otherNode: ManyConnectionsElement = None
+        otherNode: CircuitElement = None
         connectionElement: DoubleConnectionElement = None
         if isinstance(sourceNode, BusNode):
             busNode = sourceNode
@@ -104,19 +105,25 @@ class SimulatorController:
                 )
                 return
 
-            busNode.connection_ids.append(otherNode.id)
-            otherNode.connection_ids.append(busNode.id)
+            busNode = busNode.copyWith(
+                connection_ids=busNode.connection_ids + (otherNode.id,)
+            )
+            otherNode = otherNode.copyWith(
+                connection_ids=otherNode.connection_ids + (busNode.id,)
+            )
             connectionElement = TransmissionLineElement(
                 source_id=busNode.id, target_id=otherNode.id
             )
 
         if isinstance(otherNode, LoadNode) or isinstance(otherNode, GeneratorNode):
-            if otherNode.getBusId():
+            if otherNode.connection_id:
                 print(f"{otherNode.name} already connected")
                 return
 
-            busNode.connection_ids.append(otherNode.id)
-            otherNode.connection_ids.append(busNode.id)
+            busNode = busNode.copyWith(
+                connection_ids=busNode.connection_ids + (otherNode.id,)
+            )
+            otherNode = otherNode.copyWith(connection_id=busNode.id)
             connectionElement = WireElement(busNode.id, otherNode.id)
 
         if connectionElement:

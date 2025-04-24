@@ -5,7 +5,7 @@ class BusNode(ManyConnectionsElement):
     def __init__(
         self,
         v_nom: float = 1,
-        connection_ids: list[str] = [],
+        connection_ids: tuple[str] = tuple[str](),
         id: str = None,
         name: str = None,
     ):
@@ -21,14 +21,12 @@ class BusNode(ManyConnectionsElement):
     def copyWith(
         self,
         v_nom: float = None,
-        connectionIds: list[str] = None,
+        connection_ids: tuple[str] = None,
         name: str = None,
     ):
         return BusNode(
             name=name if name else self.name,
             v_nom=v_nom if v_nom else self.v_nom,
-            connection_ids=(
-                connectionIds.copy() if connectionIds else self.connection_ids.copy()
-            ),
+            connection_ids=(connection_ids if connection_ids else self.connection_ids),
             id=self.id,
         )
