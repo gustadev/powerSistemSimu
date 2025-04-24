@@ -4,7 +4,7 @@ import os
 from typing import *
 from PySide6.QtWidgets import QApplication
 
-from components.main_window import MainWindow
+from view.main_window import MainWindow
 
 
 def main():
