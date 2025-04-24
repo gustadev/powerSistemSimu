@@ -1,21 +1,34 @@
-from models.circuit_element import CircuitNode
+from models.circuit_element import ManyConnectionsElement
 
 
-class BusNode(CircuitNode):
+class BusNode(ManyConnectionsElement):
     def __init__(
         self,
         v_nom: float = 1,
-        connectionIds: list[str] = [],
+        connection_ids: list[str] = [],
         id: str = None,
         name: str = None,
     ):
-        super().__init__(id=id, name=name, node_type="Bus", connectionIds=connectionIds)
-        self.v_nom: float = v_nom
+        super().__init__(
+            id=id, name=name, node_type="Bus", connection_ids=connection_ids
+        )
+        self.__v_nom: float = v_nom
 
-    def copy(self):
+    @property
+    def v_nom(self) -> float:
+        return self.__v_nom
+
+    def copyWith(
+        self,
+        v_nom: float = None,
+        connectionIds: list[str] = None,
+        name: str = None,
+    ):
         return BusNode(
-            name=self.name,
-            v_nom=self.v_nom,
-            connectionIds=self.connectionIds.copy(),
+            name=name if name else self.name,
+            v_nom=v_nom if v_nom else self.v_nom,
+            connection_ids=(
+                connectionIds.copy() if connectionIds else self.connection_ids.copy()
+            ),
             id=self.id,
         )

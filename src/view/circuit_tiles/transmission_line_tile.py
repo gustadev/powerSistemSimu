@@ -32,8 +32,8 @@ class TransmissionLineTile(QWidget):
 
         self.simulatorInstance = SimulatorController.instance()
         self.simulatorInstance.listen(self.circuitListener)
-        sourceName = self.simulatorInstance.getElementById(line.sourceId).name
-        targetName = self.simulatorInstance.getElementById(line.targetId).name
+        sourceName = self.simulatorInstance.getElementById(line.source_id).name
+        targetName = self.simulatorInstance.getElementById(line.target_id).name
 
         self.sourceLabel = QLabel(f"From: {sourceName}, To: {targetName}")
         layout.addWidget(self.sourceLabel)
@@ -86,8 +86,8 @@ class TransmissionLineTile(QWidget):
             and element.id == self.line.id
             and isinstance(element, TransmissionLineElement)
         ):
-            sourceName = self.simulatorInstance.getElementById(element.sourceId).name
-            targetName = self.simulatorInstance.getElementById(element.targetId).name
+            sourceName = self.simulatorInstance.getElementById(element.source_id).name
+            targetName = self.simulatorInstance.getElementById(element.target_id).name
             self.sourceLabel.setText(f"From: {sourceName}, To: {targetName}")
             self.nameField.setValue(element.name)
             self.resistanceField.setValue(element.resistance)
@@ -98,20 +98,20 @@ class TransmissionLineTile(QWidget):
         if (
             event is ElementEvent.UPDATED
             and isinstance(element, BusNode)
-            and element.id == self.line.sourceId
+            and element.id == self.line.source_id
         ):
             self.sourceLabel.setText(
-                f"From: {element.name}, To: {self.simulatorInstance.getElementById(self.line.targetId).name}"
+                f"From: {element.name}, To: {self.simulatorInstance.getElementById(self.line.target_id).name}"
             )
             return
 
         if (
             event is ElementEvent.UPDATED
             and isinstance(element, BusNode)
-            and element.id == self.line.targetId
+            and element.id == self.line.target_id
         ):
 
             self.sourceLabel.setText(
-                f"From: {self.simulatorInstance.getElementById(self.line.sourceId).name}, To: {element.name}"
+                f"From: {self.simulatorInstance.getElementById(self.line.source_id).name}, To: {element.name}"
             )
             return

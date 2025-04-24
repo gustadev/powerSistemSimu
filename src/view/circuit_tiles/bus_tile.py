@@ -45,7 +45,7 @@ class BusNodeTile(QWidget):
                 if not validator():
                     return
 
-            copy = self.node.copy()
+            copy = self.node.copyWith()
 
             copy.name = self.nameField.getValue()
             copy.v_nom = self.voltageField.getValue()

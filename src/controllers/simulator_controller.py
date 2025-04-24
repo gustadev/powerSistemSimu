@@ -5,7 +5,7 @@ import pypsa
 
 from enums.element_event import ElementEvent
 from models.bus import BusNode
-from models.circuit_element import CircuitElement, CircuitNode, ConnectionElement
+from models.circuit_element import CircuitElement, ManyConnectionsElement, DoubleConnectionElement
 from models.generator import GeneratorNode
 from models.load import LoadNode
 from models.transmission_line import TransmissionLineElement
@@ -42,9 +42,9 @@ class SimulatorController:
             self.__network.add(
                 node.type,
                 node.id,
-                p_nom=node.nominalPower,
+                p_nom=node.nominal_power,
                 control=node.control,
-                bus=node.getBusId(),
+                bus=node.connection_id,
                 overwrite=True,
             )
         elif isinstance(node, LoadNode):
@@ -52,15 +52,15 @@ class SimulatorController:
                 node.type,
                 node.id,
                 p_set=node.p_set,
-                bus=node.getBusId(),
+                bus=node.connection_id,
                 overwrite=True,
             )
         elif isinstance(node, TransmissionLineElement):
             self.__network.add(
                 node.type,
                 node.id,
-                bus0=node.sourceId,
-                bus1=node.targetId,
+                bus0=node.source_id,
+                bus1=node.target_id,
                 x=node.reactance,
                 r=node.resistance,
                 overwrite=True,
@@ -82,14 +82,14 @@ class SimulatorController:
         self.__updateElement(load, ElementEvent.CREATED)
 
     # TODO update everyone on links
-    def addConnection(self, sourceNode: CircuitNode, targetNode: CircuitNode) -> None:
+    def addConnection(self, sourceNode: ManyConnectionsElement, targetNode: ManyConnectionsElement) -> None:
         if not isinstance(sourceNode, BusNode) and not isinstance(targetNode, BusNode):
             print("Cannot connect non-bus elements")
             return
 
         busNode: BusNode = None
-        otherNode: CircuitNode = None
-        connectionElement: ConnectionElement = None
+        otherNode: ManyConnectionsElement = None
+        connectionElement: DoubleConnectionElement = None
         if isinstance(sourceNode, BusNode):
             busNode = sourceNode
             otherNode = targetNode
@@ -98,16 +98,16 @@ class SimulatorController:
             otherNode = sourceNode
 
         if isinstance(otherNode, BusNode):
-            if otherNode.id in busNode.connectionIds:
+            if otherNode.id in busNode.connection_ids:
                 print(
                     f"Connection already exists between {busNode.name} and {otherNode.name}"
                 )
                 return
 
-            busNode.connectionIds.append(otherNode.id)
-            otherNode.connectionIds.append(busNode.id)
+            busNode.connection_ids.append(otherNode.id)
+            otherNode.connection_ids.append(busNode.id)
             connectionElement = TransmissionLineElement(
-                sourceId=busNode.id, targetId=otherNode.id
+                source_id=busNode.id, target_id=otherNode.id
             )
 
         if isinstance(otherNode, LoadNode) or isinstance(otherNode, GeneratorNode):
@@ -115,8 +115,8 @@ class SimulatorController:
                 print(f"{otherNode.name} already connected")
                 return
 
-            busNode.connectionIds.append(otherNode.id)
-            otherNode.connectionIds.append(busNode.id)
+            busNode.connection_ids.append(otherNode.id)
+            otherNode.connection_ids.append(busNode.id)
             connectionElement = WireElement(busNode.id, otherNode.id)
 
         if connectionElement:

@@ -1,22 +1,14 @@
-from models.circuit_element import ConnectionElement
+from models.circuit_element import DoubleConnectionElement
 
 
-class WireElement(ConnectionElement):
+class WireElement(DoubleConnectionElement):
     def __init__(
         self,
-        sourceId: str,
-        targetId: str,
+        source_id: str,
+        target_id: str,
         id: str = None,
         name: str = None,
     ):
         super().__init__(
-            node_type="Wire", id=id, name=name, sourceId=sourceId, targetId=targetId
-        )
-
-    def copy(self):
-        return WireElement(
-            sourceId=self.sourceId,
-            targetId=self.targetId,
-            id=self.id,
-            name=self.name,
+            node_type="Wire", id=id, name=name, source_id=source_id, target_id=target_id
         )

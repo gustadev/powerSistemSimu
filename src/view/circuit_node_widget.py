@@ -6,21 +6,21 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 from controllers.simulator_controller import ElementEvent, SimulatorController
-from models.circuit_element import CircuitElement, CircuitNode
+from models.circuit_element import CircuitElement
 from view.draggable_link_square import DraggableLinkSquare
 
 
 class CircuitNodeWidget(QGraphicsRectItem):
-    def __init__(self, x:float,y:float, node: CircuitNode):
+    def __init__(self, x: float, y: float, element: CircuitElement):
         super().__init__(x, y, 50, 50)
-        self.node = node
+        self.node = element
         self.setBrush(Qt.gray)
         self.setFlag(QGraphicsRectItem.ItemIsMovable, True)
         self.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
 
         self.link = DraggableLinkSquare(x + 50 / 2, y + 50 / 2, self)
 
-        self.label = QGraphicsSimpleTextItem(node.name, parent=self)
+        self.label = QGraphicsSimpleTextItem(element.name, parent=self)
         self.label.setPos(x + 5, y)
         SimulatorController.instance().listen(self.circuitListener)
 

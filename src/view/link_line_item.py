@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QGraphicsSimpleTextItem
 from PySide6.QtGui import QPen
 
 from controllers.simulator_controller import ElementEvent, SimulatorController
-from models.circuit_element import CircuitElement, ConnectionElement
+from models.circuit_element import CircuitElement, DoubleConnectionElement
 from models.transmission_line import TransmissionLineElement
 
 
@@ -16,14 +16,14 @@ class LinkLineItem(QGraphicsLineItem):
         self,
         sourceNodeDraggableLink,
         targetNodeDraggableLink,
-        connection: ConnectionElement,
+        connection: DoubleConnectionElement,
     ):
         super().__init__()
         self.sourceNodeDraggableLink = sourceNodeDraggableLink
         self.targetNodeDraggableLink = targetNodeDraggableLink
         self.setPen(QPen(Qt.blue, 1))
         self.setZValue(0)
-        self.connection: ConnectionElement = connection
+        self.connection: DoubleConnectionElement = connection
         self.nameLabel = None
         self.center = None
         if isinstance(connection, TransmissionLineElement):

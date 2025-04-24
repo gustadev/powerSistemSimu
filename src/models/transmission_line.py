@@ -1,28 +1,43 @@
-from models.circuit_element import ConnectionElement
+from models.circuit_element import DoubleConnectionElement
 
 
-class TransmissionLineElement(ConnectionElement):
+class TransmissionLineElement(DoubleConnectionElement):
     def __init__(
         self,
-        x: float = 1,
-        r: float = 1,
-        sourceId: str = None,
-        targetId: str = None,
+        reactance: float = 1,
+        resistance: float = 1,
+        source_id: str = None,
+        target_id: str = None,
         id: str = None,
         name: str = None,
     ):
         super().__init__(
-            node_type="Line", id=id, name=name, sourceId=sourceId, targetId=targetId
+            node_type="Line", id=id, name=name, source_id=source_id, target_id=target_id
         )
-        self.reactance: float = x
-        self.resistance: float = r
+        self.__reactance: float = reactance
+        self.__resistance: float = resistance
 
-    def copy(self):
+    @property
+    def reactance(self) -> float:
+        return self.__reactance
+    
+    @property
+    def resistance(self) -> float:
+        return self.__resistance
+
+    def copyWith(
+        self,
+        reactance: float = None,
+        resistance: float = None,
+        source_id: str = None,
+        target_id: str = None,
+        name: str = None,
+    ):
         return TransmissionLineElement(
-            x=self.reactance,
-            r=self.resistance,
-            sourceId=self.sourceId,
-            targetId=self.targetId,
+            name=name if name else self.name,
+            reactance=reactance if reactance else self.reactance,
+            resistance=resistance if resistance else self.resistance,
+            source_id=source_id if source_id else self.source_id,
+            target_id=target_id if target_id else self.target_id,
             id=self.id,
-            name=self.name,
         )

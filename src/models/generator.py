@@ -1,32 +1,40 @@
-from models.circuit_element import CircuitNode
+from models.circuit_element import SingleConnectionElement
 
 
-class GeneratorNode(CircuitNode):
+class GeneratorNode(SingleConnectionElement):
     def __init__(
         self,
         id: str = None,
         name: str = None,
-        nominalPower: float = 1,
+        nominal_power: float = 1,
         control: str = "GM",
-        busId: str = None,
+        connection_id: str = None,
     ):
         super().__init__(
-            node_type="Generator",
-            id=id,
-            name=name,
-            connectionIds=[busId] if busId else [],
+            node_type="Generator", id=id, name=name, connection_id=connection_id
         )
-        self.control: str = control
-        self.nominalPower: float = nominalPower
+        self.__control: str = control
+        self.__nominal_power: float = nominal_power
 
-    def getBusId(self) -> str | None:
-        return self.connectionIds[0] if len(self.connectionIds) > 0 else None
+    @property
+    def control(self) -> str:
+        return self.__control
 
-    def copy(self):
+    @property
+    def nominal_power(self) -> float:
+        return self.__nominal_power
+
+    def copyWith(
+        self,
+        control: str = None,
+        nominal_power: float = None,
+        connection_id: str = None,
+        name: str = None,
+    ):
         return GeneratorNode(
-            name=self.name,
-            nominalPower=self.nominalPower,
-            control=self.control,
-            busId=self.connectionIds[0] if len(self.connectionIds) > 0 else None,
+            name=name if name else self.name,
+            control=control if control else self.control,
+            nominal_power=nominal_power if nominal_power else self.nominal_power,
+            connection_id=connection_id if connection_id else self.connection_id,
             id=self.id,
         )
