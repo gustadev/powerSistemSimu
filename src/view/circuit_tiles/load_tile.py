@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
 
 from controllers.simulator_controller import SimulatorController
 
+from enums.element_event import ElementEvent
 from models.load import LoadNode
 from view.circuit_tiles.components.element_tile import ElementTile
 from view.circuit_tiles.components.text_field import (
@@ -28,8 +29,18 @@ class LoadTile(ElementTile[LoadNode]):
         )
         layout.addWidget(self.powerField)
 
+        self.busField = TextField(
+            title="bus",
+            type=str,
+            enabled=False,
+        )
+        layout.addWidget(self.busField)
+
     def update_form_values(self):
         super().update_form_values()
+        self.busField.setValue(
+            SimulatorController.instance().getElementNames([self.element.connection_id])
+        )
         self.powerField.setValue(self.element.p_set)
 
     def edit(self):
@@ -41,7 +52,14 @@ class LoadTile(ElementTile[LoadNode]):
                 return
 
         copy = self.element.copyWith(
-            name=self.nameField.getValue(), p_set=self.powerField.getValue()
+            name=self.nameField.getValue(),
+            p_set=self.powerField.getValue(),
         )
 
         SimulatorController.instance().updateElement(copy)
+
+    def circuitListener(self, element, event):
+        super().circuitListener(element, event)
+
+        if event == ElementEvent.UPDATED and element.id == self.element.connection_id:
+            self.update_form_values()

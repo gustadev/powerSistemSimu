@@ -160,3 +160,12 @@ class SimulatorController:
         print(self.__network.generators)
         print(self.__network.loads)
         print(self.__network.links)
+
+    def getElementNames(self, ids: list[str]) -> str:
+        names = []
+        for id in ids:
+            if id in self.__elements:
+                names.append(self.__elements[id].name)
+            else:
+                names.append(id)
+        return ", ".join(names)

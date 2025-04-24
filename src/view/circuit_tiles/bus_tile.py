@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QVBoxLayout
 
 from controllers.simulator_controller import SimulatorController
 
+from enums.element_event import ElementEvent
 from models.bus import BusNode
 from view.circuit_tiles.components.element_tile import ElementTile
 from view.circuit_tiles.components.text_field import (
@@ -26,9 +27,20 @@ class BusNodeTile(ElementTile[BusNode]):
         )
         layout.addWidget(self.voltageField)
 
+        self.connectionsField = TextField[str](
+            title="nodes",
+            type=str,
+            enabled=False,
+        )
+        layout.addWidget(self.connectionsField)
+
     def update_form_values(self):
         super().update_form_values()
         self.voltageField.setValue(self.element.v_nom)
+        self.connectionsField.setValue(
+            SimulatorController.instance().getElementNames(self.element.connection_ids)
+        )
+        return
 
     def edit(self):
         for validator in [self.nameField.validate, self.voltageField.validate]:
@@ -40,3 +52,9 @@ class BusNodeTile(ElementTile[BusNode]):
         )
 
         SimulatorController.instance().updateElement(copy)
+
+    def circuitListener(self, element: BusNode, event: ElementEvent):
+        super().circuitListener(element, event)
+
+        if event == ElementEvent.UPDATED and element.id in self.element.connection_ids:
+            self.update_form_values()

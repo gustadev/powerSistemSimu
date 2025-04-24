@@ -21,8 +21,7 @@ class ElementTile(Generic[E], QWidget):
         super().__init__()
         self.type: Type[E] = type
         self.__element: E = element
-        simulatorInstance = SimulatorController.instance()
-        simulatorInstance.listen(self.circuitListener)
+        SimulatorController.instance().listen(self.circuitListener)
         self.build_widget()
         self.update_form_values()
 

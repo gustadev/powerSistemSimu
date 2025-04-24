@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
 from controllers.simulator_controller import SimulatorController
 
 
+from enums.element_event import ElementEvent
 from models.transmission_line import TransmissionLineElement
 from view.circuit_tiles.components.element_tile import ElementTile
 from view.circuit_tiles.components.text_field import (
@@ -39,10 +40,18 @@ class TransmissionLineTile(ElementTile[TransmissionLineElement]):
         )
         layout.addWidget(self.reactanceField)
 
+        self.busField = TextField(title="bus", type=str, enabled=False)
+        layout.addWidget(self.busField)
+
     def update_form_values(self):
         super().update_form_values()
         self.resistanceField.setValue(self.element.resistance)
         self.reactanceField.setValue(self.element.reactance)
+        self.busField.setValue(
+            SimulatorController.instance().getElementNames(
+                [self.element.source_id, self.element.target_id]
+            )
+        )
 
     def edit(self):
         for validator in [
@@ -60,3 +69,11 @@ class TransmissionLineTile(ElementTile[TransmissionLineElement]):
         )
 
         SimulatorController.instance().updateElement(copy)
+
+    def circuitListener(self, element, event):
+        super().circuitListener(element, event)
+
+        if event == ElementEvent.UPDATED and (
+            element.id == self.element.source_id or element.id == self.element.target_id
+        ):
+            self.update_form_values()

@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
 
 from controllers.simulator_controller import SimulatorController
 
+from enums.element_event import ElementEvent
 from models.generator import GeneratorNode
 from view.circuit_tiles.components.element_tile import ElementTile
 from view.circuit_tiles.components.text_field import (
@@ -27,13 +28,6 @@ class GeneratorTile(ElementTile[GeneratorNode]):
         )
         layout.addWidget(self.controlField)
 
-        self.busField = TextField(
-            title="bus",
-            type=str,
-            enabled=False,
-        )
-        layout.addWidget(self.busField)
-
         self.powerField = TextField[float](
             title="power",
             trailing="kVA",
@@ -42,15 +36,18 @@ class GeneratorTile(ElementTile[GeneratorNode]):
         )
         layout.addWidget(self.powerField)
 
+        self.busField = TextField(
+            title="bus",
+            type=str,
+            enabled=False,
+        )
+        layout.addWidget(self.busField)
+
     def update_form_values(self):
         super().update_form_values()
         self.controlField.setValue(self.element.control)
         self.busField.setValue(
-            SimulatorController.instance()
-            .getElementById(self.element.connection_id)
-            .name
-            if self.element.connection_id
-            else ""
+            SimulatorController.instance().getElementNames([self.element.connection_id])
         )
         self.powerField.setValue(self.element.nominal_power)
 
@@ -70,3 +67,9 @@ class GeneratorTile(ElementTile[GeneratorNode]):
         )
 
         SimulatorController.instance().updateElement(copy)
+
+    def circuitListener(self, element, event):
+        super().circuitListener(element, event)
+
+        if event == ElementEvent.UPDATED and element.id == self.element.connection_id:
+            self.update_form_values()
