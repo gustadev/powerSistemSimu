@@ -62,6 +62,8 @@ class TextField(Generic[T], QWidget):
         layout = QHBoxLayout(self)
         layout.addWidget(QLabel(title))
         layout.addWidget(self.field)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         if trailing:
             layout.addWidget(QLabel(trailing))
         self.setLayout(layout)

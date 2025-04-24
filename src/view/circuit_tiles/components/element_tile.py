@@ -44,6 +44,9 @@ class ElementTile(Generic[E], QWidget):
 
     def build_widget(self):
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
         self._pending_title = TitleLabel(self.element.type)
         layout.addWidget(self._pending_title)
 

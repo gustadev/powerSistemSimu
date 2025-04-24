@@ -46,7 +46,8 @@ class MainWindow(QMainWindow):
         horizontalLayout.addWidget(board)
         
         rightWidget = ElementList()
-        rightWidget.setMinimumWidth(200)  # Adjust the width as needed.
+        rightWidget.setMaximumWidth(200)  
+        rightWidget.setMinimumWidth(200)
         horizontalLayout.addWidget(rightWidget)
         
         layout.addLayout(horizontalLayout)

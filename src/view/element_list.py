@@ -33,7 +33,8 @@ class ElementList(QWidget):
         container.setContentsMargins(0, 0, 0, 0)
         self.inner_layout = QVBoxLayout(container)
         self.inner_layout.setAlignment(Qt.AlignTop)
-        self.inner_layout.setContentsMargins(0, 0, 0, 0)
+        self.inner_layout.setContentsMargins(2, 2, 2, 2)
+        self.inner_layout.setSpacing(2)
 
         scroll_area.setWidget(container)
         self.layout().addWidget(scroll_area)
