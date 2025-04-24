@@ -28,6 +28,9 @@ class CircuitElement:
     @property
     def name(self) -> str:
         return self.__name
+    
+    def isConnectedTo(self, id: str) -> bool:
+       pass
 
 
 class ManyConnectionsElement(CircuitElement):
@@ -44,6 +47,9 @@ class ManyConnectionsElement(CircuitElement):
     @property
     def connection_ids(self) -> tuple[str]:
         return self.__connection_ids
+    
+    def isConnectedTo(self, id: str) -> bool:
+        return id in self.__connection_ids
 
 
 class DoubleConnectionElement(CircuitElement):
@@ -67,6 +73,9 @@ class DoubleConnectionElement(CircuitElement):
     def target_id(self) -> str:
         return self.__targetId
 
+    def isConnectedTo(self, id: str) -> bool:
+        return self.__sourceId == id or self.__targetId == id
+
 
 class SingleConnectionElement(CircuitElement):
     def __init__(
@@ -82,3 +91,6 @@ class SingleConnectionElement(CircuitElement):
     @property
     def connection_id(self) -> str | None:
         return self.__connection_id
+
+    def isConnectedTo(self, id: str) -> bool:
+        return self.__connection_id == id

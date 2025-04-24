@@ -99,20 +99,24 @@ class SimulatorController:
             otherNode = sourceNode
 
         if isinstance(otherNode, BusNode):
-            if otherNode.id in busNode.connection_ids:
-                print(
-                    f"Connection already exists between {busNode.name} and {otherNode.name}"
-                )
-                return
+            for elementId in list(busNode.connection_ids):
+                element = self.getElementById(elementId)
+                if isinstance(
+                    element, TransmissionLineElement
+                ) and element.isConnectedTo(otherNode.id):
+                    print(
+                        f"Connection already exists between {busNode.name} and {otherNode.name} through {element.name}"
+                    )
+                    return
 
-            busNode = busNode.copyWith(
-                connection_ids=busNode.connection_ids + (otherNode.id,)
-            )
-            otherNode = otherNode.copyWith(
-                connection_ids=otherNode.connection_ids + (busNode.id,)
-            )
             connectionElement = TransmissionLineElement(
                 source_id=busNode.id, target_id=otherNode.id
+            )
+            busNode = busNode.copyWith(
+                connection_ids=busNode.connection_ids + (connectionElement.id,)
+            )
+            otherNode = otherNode.copyWith(
+                connection_ids=otherNode.connection_ids + (connectionElement.id,)
             )
 
         if isinstance(otherNode, LoadNode) or isinstance(otherNode, GeneratorNode):
@@ -165,7 +169,6 @@ class SimulatorController:
         names = []
         for id in ids:
             if id in self.__elements:
-                names.append(self.__elements[id].name)
-            else:
-                names.append(id)
+                names.append(self.getElementById(id).name)
+
         return ", ".join(names)
