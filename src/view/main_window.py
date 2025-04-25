@@ -1,4 +1,5 @@
 from typing import *
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -16,13 +17,31 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         centralWidget = QWidget()
+        # Layout creation
+        layoutBtnElements = QHBoxLayout()
+        layoutBtnActions = QHBoxLayout()
+        horizontalLayout = QHBoxLayout()
+        
+        # Layout Alignment configuration
+        layoutBtnElements.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        layoutBtnActions.setAlignment(Qt.AlignmentFlag.AlignLeft)
+
+        # Screen montage
         layout = QVBoxLayout(centralWidget)
+        layout.addLayout(layoutBtnElements)
+        layout.addLayout(horizontalLayout)
+        layout.addLayout(layoutBtnActions)
 
         addBusButton = QPushButton("Add Bus")
+        addBusButton.setFixedSize(100,25)
         addGeneratorButton = QPushButton("Add Generator")
+        addGeneratorButton.setFixedSize(100,25)
         addLoadButton = QPushButton("Add Load")
+        addLoadButton.setFixedSize(100,25)
         runPowerFlowButton = QPushButton("Run Power Flow")
+        runPowerFlowButton.setFixedSize(100,25)
         printNetworkButton = QPushButton("Print Network")
+        printNetworkButton.setFixedSize(100,25)
 
         # Create the board view.
         board = BoardView()
@@ -36,13 +55,13 @@ class MainWindow(QMainWindow):
         printNetworkButton.clicked.connect(simulatorInstance.printNetwork)
 
         # Add widgets to the layout.
-        layout.addWidget(addBusButton)
-        layout.addWidget(addGeneratorButton)
-        layout.addWidget(addLoadButton)
-        layout.addWidget(board)
+        layoutBtnElements.addWidget(addBusButton)
+        layoutBtnElements.addWidget(addGeneratorButton)
+        layoutBtnElements.addWidget(addLoadButton)
+        layoutBtnElements.addWidget(board)
 
         # Create a horizontal layout to place the board view on the left and a new widget on the right.
-        horizontalLayout = QHBoxLayout()
+        
         horizontalLayout.addWidget(board)
         
         rightWidget = ElementList()
@@ -50,8 +69,8 @@ class MainWindow(QMainWindow):
         rightWidget.setMinimumWidth(200)
         horizontalLayout.addWidget(rightWidget)
         
-        layout.addLayout(horizontalLayout)
-        layout.addWidget(runPowerFlowButton)
-        layout.addWidget(printNetworkButton)
+        layoutBtnActions.addWidget(runPowerFlowButton)
+        layoutBtnActions.addWidget(printNetworkButton)
+        
 
         self.setCentralWidget(centralWidget)

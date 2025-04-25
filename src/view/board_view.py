@@ -16,7 +16,7 @@ class BoardView(QGraphicsView):
         super().__init__()
         self.setScene(QGraphicsScene(self))
         self.setRenderHint(QPainter.Antialiasing)
-        self.setSceneRect(0, 0, 600, 400)
+        # self.setSceneRect(0, 0, 600, 400)
         self.simulatorWidgets = dict()
         simulatorInstance = SimulatorController.instance()
         simulatorInstance.listen(self.circuitListener)
