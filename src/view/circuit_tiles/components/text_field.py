@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QLabel
 from PySide6.QtWidgets import QHBoxLayout
 from typing import cast
 from PySide6.QtWidgets import QWidget, QLineEdit
+from PySide6.QtCore import QSize, Qt
 
 
 from typing import Generic, Type, TypeVar
@@ -58,9 +59,13 @@ class TextField(Generic[T], QWidget):
         self.type = type
         self.validators = validators
         self.field = QLineEdit()
+        # self.field.setFixedSize(QSize(50,30))
         self.field.setText(str(value))
+        self.label = QLabel(self.title)
+        # self.label.setFixedSize(QSize(50,30))
         layout = QHBoxLayout(self)
-        layout.addWidget(QLabel(title))
+        layout.setAlignment(Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.label)
         layout.addWidget(self.field)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)

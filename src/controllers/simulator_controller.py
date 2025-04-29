@@ -71,21 +71,19 @@ class SimulatorController:
                 callback(node, event)
 
     def addBus(self) -> None:
-        bus = BusNode()
-        self.__updateElement(bus, event=ElementEvent.CREATED)
+        # bus = BusNode()
+        self.__updateElement(BusNode(), event=ElementEvent.CREATED)
 
     def addGenerator(self) -> None:
-        generator = GeneratorNode()
-        self.__updateElement(generator, ElementEvent.CREATED)
+        # generator = GeneratorNode()
+        self.__updateElement(GeneratorNode(), ElementEvent.CREATED)
 
     def addLoad(self) -> None:
-        load = LoadNode()
-        self.__updateElement(load, ElementEvent.CREATED)
+        # load = LoadNode()
+        self.__updateElement(LoadNode(), ElementEvent.CREATED)
 
     # TODO update everyone on links
-    def addConnection(
-        self, sourceNode: CircuitElement, targetNode: CircuitElement
-    ) -> None:
+    def addConnection(self, sourceNode: CircuitElement, targetNode: CircuitElement) -> None:
         if not isinstance(sourceNode, BusNode) and not isinstance(targetNode, BusNode):
             print("Cannot connect non-bus elements")
             return
@@ -93,12 +91,8 @@ class SimulatorController:
         busNode: BusNode = None
         otherNode: CircuitElement = None
         connectionElement: DoubleConnectionElement = None
-        if isinstance(sourceNode, BusNode):
-            busNode = sourceNode
-            otherNode = targetNode
-        else:
-            busNode = targetNode
-            otherNode = sourceNode
+
+        (busNode, otherNode) = (sourceNode, targetNode) if isinstance(sourceNode, BusNode) else (targetNode, sourceNode)
 
         if isinstance(otherNode, BusNode):
             for elementId in list(busNode.connection_ids):

@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
 )
-from PySide6.QtGui import QPainter
+from PySide6.QtGui import QPainter,Qt
 
 from controllers.simulator_controller import ElementEvent, SimulatorController
 from models.circuit_element import CircuitElement, DoubleConnectionElement
@@ -15,7 +15,9 @@ class BoardView(QGraphicsView):
     def __init__(self):
         super().__init__()
         self.setScene(QGraphicsScene(self))
-        self.setRenderHint(QPainter.Antialiasing)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.setBackgroundBrush(Qt.GlobalColor.white)
+        
         # self.setSceneRect(0, 0, 600, 400)
         self.simulatorWidgets = dict()
         simulatorInstance = SimulatorController.instance()

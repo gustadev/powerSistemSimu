@@ -1,5 +1,6 @@
 from typing import *
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt,QSize
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -17,6 +18,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         centralWidget = QWidget()
+        self.setWindowTitle("Power Systems Simulator")
         # Layout creation
         layoutBtnElements = QHBoxLayout()
         layoutBtnActions = QHBoxLayout()
@@ -32,16 +34,26 @@ class MainWindow(QMainWindow):
         layout.addLayout(horizontalLayout)
         layout.addLayout(layoutBtnActions)
 
-        addBusButton = QPushButton("Add Bus")
-        addBusButton.setFixedSize(100,25)
-        addGeneratorButton = QPushButton("Add Generator")
-        addGeneratorButton.setFixedSize(100,25)
-        addLoadButton = QPushButton("Add Load")
-        addLoadButton.setFixedSize(100,25)
+        addBusButton = QPushButton("")#("Add Bus")
+        addBusButton.setFixedSize(60,35)
+        addBusButton.setIcon(QIcon("files/ico/busbar.png"))
+        addBusButton.setIconSize(QSize(70, 30))
+
+        addGeneratorButton = QPushButton("")#("Add Generator")
+        addGeneratorButton.setFixedSize(60,35)
+        addGeneratorButton.setIcon(QIcon("files/ico/gerador.png"))
+        addGeneratorButton.setIconSize(QSize(70, 30))
+
+        addLoadButton = QPushButton("")#("Add Load")
+        addLoadButton.setFixedSize(60,35)
+        addLoadButton.setIconSize(QSize(70,30))
+        addLoadButton.setIcon(QIcon("files/ico/load.png"))
+
         runPowerFlowButton = QPushButton("Run Power Flow")
-        runPowerFlowButton.setFixedSize(100,25)
+        runPowerFlowButton.setFixedSize(110,30)
+
         printNetworkButton = QPushButton("Print Network")
-        printNetworkButton.setFixedSize(100,25)
+        printNetworkButton.setFixedSize(110,30)
 
         # Create the board view.
         board = BoardView()

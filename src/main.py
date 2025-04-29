@@ -1,6 +1,6 @@
 import sys
 import os
-
+import qdarktheme
 from typing import *
 from PySide6.QtWidgets import QApplication
 
@@ -11,10 +11,10 @@ def main():
     app = QApplication(sys.argv)
 
     window = MainWindow()
-
+    window.setStyleSheet(qdarktheme.load_stylesheet('light'))
     window.resize(640, 480)
     window.show()
-
+    
     sys.exit(app.exec())
 
 
