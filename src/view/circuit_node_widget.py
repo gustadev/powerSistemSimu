@@ -1,6 +1,8 @@
 from typing import *
 from PySide6.QtWidgets import (
     QGraphicsRectItem,
+    QGraphicsEllipseItem,
+    QGraphicsItem,
     QGraphicsSimpleTextItem,
 )
 from PySide6.QtCore import Qt
@@ -14,9 +16,9 @@ class CircuitNodeWidget(QGraphicsRectItem):
     def __init__(self, x: float, y: float, element: CircuitElement):
         super().__init__(x, y, 50, 50)
         self.node = element
-        self.setBrush(Qt.gray)
-        self.setFlag(QGraphicsRectItem.ItemIsMovable, True)
-        self.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
+        self.setBrush(Qt.GlobalColor.gray)
+        self.setFlag(QGraphicsRectItem.GraphicsItemFlag.ItemIsMovable, True)
+        self.setFlag(QGraphicsRectItem.GraphicsItemFlag.ItemIsSelectable, True)
 
         self.link = DraggableLinkSquare(x + 50 / 2, y + 50 / 2, self)
 

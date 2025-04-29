@@ -15,8 +15,8 @@ class DraggableLinkSquare(QGraphicsRectItem):
         super().__init__(x, y, 10, 10, parent=parent)
         self.parent = parent
         self.setBrush(Qt.red)
-        self.setFlag(QGraphicsRectItem.ItemIsSelectable, True)
-        self.setFlag(QGraphicsRectItem.ItemIsFocusable, True)
+        self.setFlag(QGraphicsRectItem.GraphicsItemFlag.ItemIsSelectable, True)
+        self.setFlag(QGraphicsRectItem.GraphicsItemFlag.ItemIsFocusable, True)
         self.drag_line = None
 
     def mousePressEvent(self, event):
@@ -26,7 +26,7 @@ class DraggableLinkSquare(QGraphicsRectItem):
     def mouseMoveEvent(self, event):
         if not self.drag_line:
             self.drag_line = QGraphicsLineItem()
-            self.drag_line.setPen(QPen(Qt.blue, 2, Qt.DashLine))
+            self.drag_line.setPen(QPen(Qt.GlobalColor.blue, 2, Qt.PenStyle.DashLine))
             self.scene().addItem(self.drag_line)
         self.drag_line.setLine(
             self.startPos.x(),

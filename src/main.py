@@ -11,7 +11,9 @@ def main():
     app = QApplication(sys.argv)
 
     window = MainWindow()
-    window.setStyleSheet(qdarktheme.load_stylesheet('light'))
+    
+    if os.name == 'nt' :
+        window.setStyleSheet(qdarktheme.load_stylesheet())
     window.resize(640, 480)
     window.show()
     
