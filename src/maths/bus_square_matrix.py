@@ -25,6 +25,14 @@ class BusSquareMatrix:
         return BusSquareMatrix(m)
 
     @property
+    def matrix(self) -> list[list[complex | float]]:
+        return self.__m
+
+    @property
+    def inverse(self) -> list[list[complex | float]]:
+        return linalg.inv(self.__m)
+
+    @property
     def size(self) -> int:
         return self.__size
 
@@ -70,10 +78,6 @@ class BusSquareMatrix:
         return (
             "\n".join([" ".join([f"{c:.2f}" for c in row]) for row in self.__m]) + "\n"
         )
-
-    @property
-    def inverse(self) -> "BusSquareMatrix":
-        return BusSquareMatrix(linalg.inv(self.__m))
 
     def __getitem__(self, row: int) -> list[complex | float]:
         return self.__m[row]

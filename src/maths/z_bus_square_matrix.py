@@ -101,8 +101,12 @@ class ZBusSquareMatrix:
         return f"{self.__m}"
 
     @property
-    def ybus(self) -> BusSquareMatrix:
+    def y_matrix(self) -> list[list[complex | float]]:
         return self.__m.inverse
+
+    @property
+    def z_matrix(self) -> list[list[complex | float]]:
+        return self.__m.matrix
 
 
 def main():
@@ -118,14 +122,14 @@ def main():
 
     z.connect_bus_to_bus(j * 0.15, bus2, bus3)  # De 2 para 3, z(pu) = j0.15
 
-    print(f"Y = \n{z.ybus}")
+    print(f"Y = \n{z.y_matrix}")
 
     # Z = FINAL
     # 0.00+0.70j 0.00+0.66j 0.00+0.63j
     # 0.00+0.66j 0.00+0.75j 0.00+0.68j
     # 0.00+0.63j 0.00+0.68j 0.00+0.71j
 
-    # Y = 
+    # Y =
     # 0.00-9.17j 0.00+5.00j -0.00+3.33j
     # 0.00+5.00j 0.00-11.67j -0.00+6.67j
     # 0.00+3.33j 0.00+6.67j 0.00-10.67j
