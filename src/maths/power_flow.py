@@ -1,4 +1,5 @@
 from math import cos, sin
+import numpy
 from scipy import linalg
 from y_bus_square_matrix import YBusSquareMatrix
 
@@ -43,25 +44,19 @@ class PQBus(Bus):
         self.p_esp = p
         self.q_esp = q
 
-    def update_values(self) -> None:
-        pass
-
 
 class PVBus(Bus):  #
     def __init__(
         self,
         name: str,
         v_esp: float = 1,
-        generator: complex = complex(0),
-        load: complex = complex(1),
+        generator: complex = complex(1),
+        load: complex = complex(0),
     ):
         p = generator.real - load.real
         super().__init__(name=name, v=v_esp, o=0, p=p, q=0)
         self.v_esp = v_esp
         self.p_esp = p
-
-    def update_values(self) -> None:
-        pass
 
 
 class SlackBus(Bus):  # knows delta
@@ -74,9 +69,6 @@ class SlackBus(Bus):  # knows delta
         super().__init__(name=name, v=v_esp, o=o_esp, p=1, q=0)
         self.v_esp = v_esp
         self.o_esp = o_esp
-
-    def update_values(self) -> None:
-        pass
 
 
 class NamedMatrixIndex:
@@ -143,7 +135,7 @@ class PowerFlow:
         j: list[list[float]] = [[0 for _ in range(n)] for _ in range(n)]
         s: list[float] = [[0] for _ in range(n)]
 
-        for i in range(10):
+        for i in range(100):
             for row, variable in enumerate(self.variables):
                 if variable.name == "o":
                     x[row] = self.buses[row].o
@@ -181,22 +173,19 @@ class PowerFlow:
                     elif self.jacobian[row][column].name == "∂q/∂v":
                         j[row][column] = bus.v * (g * sino - b * coso)
 
-            x = linalg.inv(j) * self.transposeList(s)
+            x = numpy.dot(numpy.array(linalg.inv(j)), numpy.array(s))
+            print("X: ")
+            print(x)
 
             for variable in self.variables:
                 if variable.name == "o":
                     self.buses[variable.index].o = (
-                        self.buses[variable.index].o - x[variable.index][0]
+                        self.buses[variable.index].o - x[variable.index]
                     )
-                    print(
-                        f"Updating {self.buses[variable.index].name} o: {self.buses[variable.index].o}"
-                    )
+
                 elif variable.name == "v":
                     self.buses[variable.index].v = (
-                        self.buses[variable.index].v - x[variable.index][0]
-                    )
-                    print(
-                        f"Updating {self.buses[variable.index].name} v: {self.buses[variable.index].v}"
+                        self.buses[variable.index].v - x[variable.index]
                     )
 
     def print_state(self):
