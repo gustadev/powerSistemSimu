@@ -1,18 +1,13 @@
 from bus_square_matrix import BusSquareMatrix
 
 
-type BusIndex = int
-
-j: complex = complex(0, 1)
-
-
 class YBusSquareMatrix:
     def __init__(self, log_print: bool = False):
         self.__m: BusSquareMatrix = BusSquareMatrix()
         self.__log_print: bool = log_print
 
     # Caso 1 - Adicionar um barramento e conecta a terra. Aumenta a ordem da matriz.
-    def add_bus(self, y: complex) -> BusIndex:
+    def add_bus(self, y: complex) -> int:
         new_bus = self.__m.size
         if self.__log_print:
             print(f"==========================================")
@@ -27,9 +22,7 @@ class YBusSquareMatrix:
         return new_bus
 
     # Caso 4 - Conectar um barramento a outro barramento. Não aumenta a ordem da matriz.
-    def connect_bus_to_bus(
-        self, y: complex, source: BusIndex, target: BusIndex
-    ) -> None:
+    def connect_bus_to_bus(self, y: complex, source: int, target: int) -> None:
         if self.__log_print:
             print(f"==========================================")
             print(
@@ -66,6 +59,8 @@ class YBusSquareMatrix:
 
 
 def main():
+    j: complex = complex(0, 1)
+
     y = YBusSquareMatrix(log_print=True)
 
     bus1 = y.add_bus(1 / (j * 1.2))  # De 1 para 0, z(pu) = j1.2
