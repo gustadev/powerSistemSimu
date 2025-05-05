@@ -7,10 +7,22 @@ from scipy import linalg
 #     [m10 m11 m12]
 #     [m20 m21 m22]
 
+zero = complex(0)
+
+
 class BusSquareMatrix:
     def __init__(self, m: list[list[complex | float]] = []) -> None:
         self.__m: list[list[complex | float]] = m
         self.__size = len(m)
+
+    @classmethod
+    def generator(
+        self, size: int, builder: Callable[[int, int], complex] = lambda r, c: zero
+    ) -> "BusSquareMatrix":
+        m: list[list[complex | float]] = [
+            [builder(r, c) for c in range(size)] for r in range(size)
+        ]
+        return BusSquareMatrix(m)
 
     @property
     def size(self) -> int:
@@ -34,9 +46,9 @@ class BusSquareMatrix:
 
     def increase_order(
         self,
-        new_row: Callable[[int], complex],  # (c: int) -> complex,
-        new_column: Callable[[int], complex],  # (r: int) -> complex,
-        last_value: complex,
+        new_row: Callable[[int], complex] = lambda c: zero,  # (c: int) -> complex,
+        new_column: Callable[[int], complex] = lambda r: zero,  # (r: int) -> complex,
+        last_value: complex = zero,  # complex,
     ) -> "BusSquareMatrix":
         size = self.__size
         if size == 0:

@@ -19,11 +19,7 @@ class ZBusSquareMatrix:
             print(f"Case 1: adding bus {new_bus+1} to ground, with z = {z}\n")
 
         # Incrementa a ordem da matriz, zerando a nova linha e coluna.
-        self.__m = self.__m.increase_order(
-            new_row=lambda c: complex(0),
-            new_column=lambda r: complex(0),
-            last_value=z,
-        )
+        self.__m = self.__m.increase_order(last_value=z)
 
         if self.__log_print:
             print(f"Z = \n{self}")
@@ -122,10 +118,17 @@ def main():
 
     z.connect_bus_to_bus(j * 0.15, bus2, bus3)  # De 2 para 3, z(pu) = j0.15
 
+    print(f"Y = \n{z.ybus}")
+
     # Z = FINAL
     # 0.00+0.70j 0.00+0.66j 0.00+0.63j
     # 0.00+0.66j 0.00+0.75j 0.00+0.68j
     # 0.00+0.63j 0.00+0.68j 0.00+0.71j
+
+    # Y = 
+    # 0.00-9.17j 0.00+5.00j -0.00+3.33j
+    # 0.00+5.00j 0.00-11.67j -0.00+6.67j
+    # 0.00+3.33j 0.00+6.67j 0.00-10.67j
 
     # z = ZBusMatrix(log_print=True)
     # bus1 = z.add_bus_and_connect_to_ground(100000000)
