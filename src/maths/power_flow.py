@@ -1,3 +1,5 @@
+from math import cos, sin
+from scipy import linalg
 from y_bus_square_matrix import YBusSquareMatrix
 
 
@@ -14,10 +16,18 @@ class Bus:
         q: float = 0,
     ):
         self.name = name
-        self.v = v
-        self.o = o
-        self.p = p
-        self.q = q
+        self.v: float = v
+        self.o: float = o
+        self.p: float = p
+        self.q: float = q
+
+    def getPower(self, other: "Bus", y: complex) -> complex:
+        coso: float = cos(self.o - other.o)
+        sino: float = sin(self.o - other.o)
+        return complex(
+            self.v * other.v * (y.real * coso + y.imag * sino),
+            self.v * other.v * (y.real * sino - y.imag * coso),
+        )
 
 
 class PQBus(Bus):
@@ -27,8 +37,8 @@ class PQBus(Bus):
         load: complex = complex(1),
         generator: complex = complex(0),
     ):
-        p = (generator - load).real
-        q = (generator - load).imag
+        p: float = generator.real - load.real
+        q: float = generator.imag - load.imag
         super().__init__(name=name, v=1, o=0, p=p, q=q)
         self.p_esp = p
         self.q_esp = q
@@ -128,9 +138,73 @@ class PowerFlow:
         print("Solving power flow...")
         self.print_state()
 
+        n: int = len(self.buses)
+        x: list[float] = [[0] for _ in range(n)]
+        j: list[list[float]] = [[0 for _ in range(n)] for _ in range(n)]
+        s: list[float] = [[0] for _ in range(n)]
+
+        for i in range(10):
+            for row, variable in enumerate(self.variables):
+                if variable.name == "o":
+                    x[row] = self.buses[row].o
+                elif variable.name == "v":
+                    x[row] = self.buses[row].v
+
+            for row in range(n):
+                bus = self.buses[row]
+                sSum = complex(0)
+                for column, other in enumerate(self.buses):
+                    sSum = sSum + bus.getPower(
+                        other=other, y=self.yMatrix.y_matrix[row][column]
+                    )
+
+                if self.powers[row].name == "p":
+                    s[row] = sSum.real
+                elif self.powers[row].name == "q":
+                    s[row] = sSum.imag
+
+            for row in range(n):
+                for column in range(n):
+                    bus = self.buses[row]
+                    other = self.buses[column]
+                    g = self.yMatrix.y_matrix[row][column].real
+                    b = self.yMatrix.y_matrix[row][column].imag
+                    coso = cos(bus.o - other.o)
+                    sino = sin(bus.o - other.o)
+
+                    if self.jacobian[row][column].name == "∂p/∂o":
+                        j[row][column] = bus.v * other.v * (g * sino - b * coso)
+                    elif self.jacobian[row][column].name == "∂p/∂v":
+                        j[row][column] = bus.v * (g * coso + b * sino)
+                    elif self.jacobian[row][column].name == "∂q/∂o":
+                        j[row][column] = -bus.v * other.v * (g * sino + b * coso)
+                    elif self.jacobian[row][column].name == "∂q/∂v":
+                        j[row][column] = bus.v * (g * sino - b * coso)
+
+            x = linalg.inv(j) * self.transposeList(s)
+
+            for variable in self.variables:
+                if variable.name == "o":
+                    self.buses[variable.index].o = (
+                        self.buses[variable.index].o - x[variable.index][0]
+                    )
+                    print(
+                        f"Updating {self.buses[variable.index].name} o: {self.buses[variable.index].o}"
+                    )
+                elif variable.name == "v":
+                    self.buses[variable.index].v = (
+                        self.buses[variable.index].v - x[variable.index][0]
+                    )
+                    print(
+                        f"Updating {self.buses[variable.index].name} v: {self.buses[variable.index].v}"
+                    )
+
     def print_state(self):
         for bus in self.buses:
             print(f"Bus: {bus.name}, V: {bus.v}, O: {bus.o}, P: {bus.p}, Q: {bus.q}")
+
+    def transposeList(self, list: list[float]) -> list[list[float]]:
+        return [[list[j]] for j in range(len(list))]
 
     def __update_indexes(self):
         o: list[NamedListIndex] = list[NamedListIndex]()
@@ -191,7 +265,7 @@ def main():
     powerFlow.connectBuses(bus1, bus3, z=complex(0, 0.25))
     powerFlow.connectBuses(bus2, bus3, z=complex(0, 0.2))
 
-    # powerFlow.solve()
+    powerFlow.solve()
 
 
 if __name__ == "__main__":
