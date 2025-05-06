@@ -1,10 +1,8 @@
 from math import cos, sin
+from typing import Any, Callable
 import numpy
 from scipy import linalg
 from y_bus_square_matrix import YBusSquareMatrix
-
-
-j: complex = complex(0, 1)
 
 
 class Bus:
@@ -25,10 +23,11 @@ class Bus:
     def getPower(self, other: "Bus", y: complex) -> complex:
         coso: float = cos(self.o - other.o)
         sino: float = sin(self.o - other.o)
-        return complex(
+        s = complex(
             self.v * other.v * (y.real * coso + y.imag * sino),
             self.v * other.v * (y.real * sino - y.imag * coso),
         )
+        return s
 
 
 class PQBus(Bus):
@@ -71,36 +70,23 @@ class SlackBus(Bus):  # knows delta
         self.o_esp = o_esp
 
 
-class NamedMatrixIndex:
-    def __init__(self, name: str, row: int, column: int):
-        self.name = name
-        self.row = row
-        self.column = column
+class VariableIndex:
+    def __init__(self, variable: str, power: str, busIndex: int):
+        self.variable = variable
+        self.power = power
+        self.index = busIndex
 
     def __str__(self) -> str:
-        return f"{self.name}[{self.row + 1},{self.column + 1}]"
-
-
-class NamedListIndex:
-    def __init__(self, name: str, index: int):
-        self.name = name
-        self.index = index
-
-    def __str__(self) -> str:
-        return f"{self.name}[{self.index + 1}]"
+        return f"{self.variable}[{self.index + 1}]"
 
 
 class PowerFlow:
     def __init__(self):
         self.buses: list[Bus] = list[Bus]()
         self.yMatrix: YBusSquareMatrix = YBusSquareMatrix()
-        self.variables = list[NamedMatrixIndex]()
-        self.jacobian = list[list[NamedMatrixIndex]]()
-        self.powers = list[NamedMatrixIndex]()
+        self.indexes = list[VariableIndex]()
 
-    def add_bus(
-        self, bus: Bus, y: complex | None = complex(0), z: complex | None = None
-    ) -> Bus:
+    def add_bus(self, bus: Bus, y: complex | None = complex(0), z: complex | None = None) -> Bus:
         self.buses.append(bus)
         self.yMatrix.add_bus(self.__get_y_from_z_or_y(z, y))
         self.__update_indexes()
@@ -115,9 +101,7 @@ class PowerFlow:
     ) -> None:
         bus1Index = self.buses.index(bus1)
         bus2Index = self.buses.index(bus2)
-        self.yMatrix.connect_bus_to_bus(
-            self.__get_y_from_z_or_y(z, y), bus1Index, bus2Index
-        )
+        self.yMatrix.connect_bus_to_bus(self.__get_y_from_z_or_y(z, y), bus1Index, bus2Index)
 
     def __get_y_from_z_or_y(self, z: complex | None, y: complex | None) -> complex:
         if z is not None:
@@ -128,65 +112,76 @@ class PowerFlow:
 
     def solve(self):
         print("Solving power flow...")
-        self.print_state()
 
         n: int = len(self.buses)
         x: list[float] = [[0] for _ in range(n)]
         j: list[list[float]] = [[0 for _ in range(n)] for _ in range(n)]
         s: list[float] = [[0] for _ in range(n)]
 
-        for i in range(100):
-            for row, variable in enumerate(self.variables):
-                if variable.name == "o":
-                    x[row] = self.buses[row].o
-                elif variable.name == "v":
-                    x[row] = self.buses[row].v
+        for i in range(10):
 
-            for row in range(n):
-                bus = self.buses[row]
-                sSum = complex(0)
-                for column, other in enumerate(self.buses):
-                    sSum = sSum + bus.getPower(
-                        other=other, y=self.yMatrix.y_matrix[row][column]
-                    )
+            def getVariable(busIndex: int, variable: str, _) -> float:
+                return self.buses[busIndex].v if variable == "o" else self.buses[busIndex].v
 
-                if self.powers[row].name == "p":
-                    s[row] = sSum.real
-                elif self.powers[row].name == "q":
-                    s[row] = sSum.imag
+            def getPower(busIndex: int, _, power: str) -> float:
+                bus = self.buses[busIndex]
+                s: complex = sum(
+                    [
+                        bus.getPower(other, self.yMatrix.y_matrix[busIndex][c])
+                        for c, other in enumerate(self.buses)
+                    ]
+                )
+                return s.real if power == "p" else s.imag
 
-            for row in range(n):
-                for column in range(n):
-                    bus = self.buses[row]
-                    other = self.buses[column]
-                    g = self.yMatrix.y_matrix[row][column].real
-                    b = self.yMatrix.y_matrix[row][column].imag
-                    coso = cos(bus.o - other.o)
-                    sino = sin(bus.o - other.o)
+            def getJacobianElement(
+                rowIndex: int, columnIndex: int, variable: str, power: str
+            ) -> float:
+                bus = self.buses[rowIndex]
+                other = self.buses[columnIndex]
+                g: float = self.yMatrix.y_matrix[rowIndex][columnIndex].real
+                b: float = self.yMatrix.y_matrix[rowIndex][columnIndex].imag
+                coso: float = cos(bus.o - other.o)
+                sino: float = sin(bus.o - other.o)
 
-                    if self.jacobian[row][column].name == "∂p/∂o":
-                        j[row][column] = bus.v * other.v * (g * sino - b * coso)
-                    elif self.jacobian[row][column].name == "∂p/∂v":
-                        j[row][column] = bus.v * (g * coso + b * sino)
-                    elif self.jacobian[row][column].name == "∂q/∂o":
-                        j[row][column] = -bus.v * other.v * (g * sino + b * coso)
-                    elif self.jacobian[row][column].name == "∂q/∂v":
-                        j[row][column] = bus.v * (g * sino - b * coso)
+                if variable == "o" and power == "p":  # ∂p/∂o
+                    return bus.v * other.v * (g * sino - b * coso)
+                elif variable == "v" and power == "p":  # ∂p/∂v
+                    return bus.v * (g * coso + b * sino)
+                elif variable == "o" and power == "q":  # ∂q/∂o
+                    return -bus.v * other.v * (g * sino + b * coso)
+                elif variable == "v" and power == "q":  # ∂q/∂v
+                    return bus.v * (g * sino - b * coso)
+                else:
+                    raise ValueError("Invalid variable or power")
 
-            x = numpy.dot(numpy.array(linalg.inv(j)), numpy.array(s))
-            print("X: ")
-            print(x)
+            x = self.__map_indexes_list(getVariable)
+            s = self.__map_indexes_list(getPower)
+            j = self.__map_indexes_matrix(getJacobianElement)
 
-            for variable in self.variables:
-                if variable.name == "o":
-                    self.buses[variable.index].o = (
-                        self.buses[variable.index].o - x[variable.index]
-                    )
+            dX = numpy.dot(numpy.linalg.inv(j), s)
 
-                elif variable.name == "v":
-                    self.buses[variable.index].v = (
-                        self.buses[variable.index].v - x[variable.index]
-                    )
+            print(f"X: {x}")
+            print(f"S: {s}")
+            print("J: ")
+            for row in j:
+                print("  [" + ", ".join(str(item) for item in row) + "]")
+
+            print(f"dX: {dX}")
+
+            # Update
+            for variable in self.indexes:
+                if variable.variable == "o":
+                    o = self.buses[variable.index].o - dX[variable.index]
+                    self.buses[variable.index].o = o
+                    print(f"{variable}: {o}")
+
+                elif variable.variable == "v":
+                    v = self.buses[variable.index].v - dX[variable.index]
+                    self.buses[variable.index].v = v
+                    print(f"{variable}: {v}")
+        # end for
+
+    # end solve
 
     def print_state(self):
         for bus in self.buses:
@@ -196,42 +191,51 @@ class PowerFlow:
         return [[list[j]] for j in range(len(list))]
 
     def __update_indexes(self):
-        o: list[NamedListIndex] = list[NamedListIndex]()
-        v: list[NamedListIndex] = list[NamedListIndex]()
-        p: list[NamedListIndex] = list[NamedListIndex]()
-        q: list[NamedListIndex] = list[NamedListIndex]()
+        o_indexes: list[VariableIndex] = list[VariableIndex]()
+        v_indexes: list[VariableIndex] = list[VariableIndex]()
 
-        for r, source in enumerate(self.buses):
+        for index, source in enumerate(self.buses):
             if isinstance(source, PQBus):
-                o.append(NamedListIndex("o", r))
-                v.append(NamedListIndex("v", r))
-                p.append(NamedListIndex("p", r))
-                q.append(NamedListIndex("q", r))
+                o_indexes.append(VariableIndex(variable="o", power="p", busIndex=index))
+                v_indexes.append(VariableIndex(variable="v", power="q", busIndex=index))
             if isinstance(source, PVBus):
-                o.append(NamedListIndex("o", r))
-                p.append(NamedListIndex("p", r))
+                o_indexes.append(VariableIndex(variable="o", power="p", busIndex=index))
 
-        variables = o + v
-        powers = p + q
-        n = len(variables)
-        jacobian = [["" for _ in range(n)] for _ in range(n)]
-
-        for row, variable in enumerate(variables):
-            for column, power in enumerate(powers):
-                jacobian[row][column] = NamedMatrixIndex(
-                    f"∂{power.name}/∂{variable.name}", variable.index, power.index
-                )
-
-        self.variables = variables
-        self.powers = powers
-        self.jacobian = jacobian
+        self.indexes = o_indexes + v_indexes
 
     def print_indexes(self):
-        print("X:  [" + ", ".join(str(item) for item in self.variables) + "]")
-        print(f"S: [" + ", ".join(str(item) for item in self.powers) + "]")
-        print("J: ")
-        for row in self.jacobian:
-            print("  [" + ", ".join(str(item) for item in row) + "]")
+        x = self.__map_indexes_list(lambda index, variable, _: f"{variable}[{index+1}]")
+        s = self.__map_indexes_list(lambda index, _, power: f"{power}[{index+1}]")
+        j = self.__map_indexes_matrix(lambda row, column, v, p: f"∂{p}{row+1}/∂{v}{column+1}")
+        for r, row in enumerate(j):
+            print(
+                f"|{x[r]}| {"=" if r == 0 else " "} "
+                + "|"
+                + ", ".join(str(item) for item in row)
+                + "|"
+                + f" {"*" if r == 0 else " "} |{s[r]}|"
+            )
+
+    def __map_indexes_matrix(
+        self, x: Callable[[int, int, str, str], Any]  # row, column, variable, power]
+    ) -> list[list[Any]]:
+        return [
+            [
+                x(
+                    row_index.index,
+                    column_index.index,
+                    column_index.variable,
+                    row_index.power,
+                )
+                for _, column_index in enumerate(self.indexes)
+            ]
+            for _, row_index in enumerate(self.indexes)
+        ]
+
+    def __map_indexes_list(
+        self, x: Callable[[int, str, str], Any]  # row, variable, power
+    ) -> list[Any]:
+        return [x(index.index, index.variable, index.power) for _, index in enumerate(self.indexes)]
 
 
 def main():
@@ -255,6 +259,24 @@ def main():
     powerFlow.connectBuses(bus2, bus3, z=complex(0, 0.2))
 
     powerFlow.solve()
+    # v2 = 0.96674
+    # o2 = -2.7596 graus
+    # o3 = 2.347 graus
+    # powerflow = PowerFlow()
+    # bus1 = powerflow.add_bus(SlackBus("Slack bus", v_esp=1.02, o_esp=0))
+    # bus2 = powerflow.add_bus(PQBus("Load", load=complex(2, 0.5)))
+    # bus3 = powerflow.add_bus(
+    #     PVBus("Generator", v_esp=1.03, generator=complex(1.5)),
+    #     y=complex(0),
+    # )
+
+    # powerflow.connectBuses(bus1, bus2, y=complex(5, -15))
+    # powerflow.connectBuses(bus1, bus3, y=complex(10, -40))
+    # powerflow.connectBuses(bus2, bus3, y=complex(15, -50))
+
+    # powerflow.print_indexes()
+    # # return
+    # powerflow.solve()
 
 
 if __name__ == "__main__":
