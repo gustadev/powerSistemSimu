@@ -86,7 +86,9 @@ class Bus:
         if self == derivedOnBus and other == derivedOnBus:
             return -2 * other.v * abs(y) * sin(cmath.phase(y))
 
-        # TODO what if self != derivedOnBus?
+        # TODO is it right?
+        if self != derivedOnBus and other != self:
+            return -self.v * other.v * abs(y) * cos(cmath.phase(y) - self.o + other.o)
 
         return 0
 
