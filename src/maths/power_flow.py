@@ -1,3 +1,4 @@
+import cmath
 from math import cos, sin
 from typing import Any, Callable
 import numpy
@@ -20,14 +21,74 @@ class Bus:
         self.p: float = p
         self.q: float = q
 
-    def getPower(self, other: "Bus", y: complex) -> complex:
-        coso: float = cos(self.o - other.o)
-        sino: float = sin(self.o - other.o)
-        s = complex(
-            self.v * other.v * (y.real * coso + y.imag * sino),
-            self.v * other.v * (y.real * sino - y.imag * coso),
-        )
-        return s
+    # p = |V1||V2||Y| cos(theta12 - o1 + o2)
+    def calcP(self, other: "Bus", y: complex) -> float:
+        theta = cmath.phase(y)
+        return self.v * other.v * abs(y) * cos(theta - self.o + other.o)
+
+    # q = |V1||V2||Y| sin(theta12 - o1 + o2)
+    def calcQ(self, other: "Bus", y: complex) -> float:
+        theta = cmath.phase(y)
+        return -self.v * other.v * abs(y) * sin(theta - self.o + other.o)  # TODO pq negativo?
+
+    # Ref https://www.intechopen.com/chapters/65445
+    # 66.8 −51.5 19.45
+    # −51.5 93.52 -15.45
+    # -20.55 15.45 63.2
+    def dPdO(self, other: "Bus", y: complex, derivedOnBus: "Bus", y_o_d: complex) -> float:
+        # serve para p2/o2 do exemplo (nos 2 termos)
+        if self == derivedOnBus and other != derivedOnBus:
+            return self.v * other.v * abs(y) * sin(cmath.phase(y) - self.o + other.o)
+
+        # serve para p2/o3 (unico termo)
+        if self != derivedOnBus and other == derivedOnBus:
+            return -self.v * other.v * abs(y) * sin(cmath.phase(y) - self.o + other.o)
+
+        return 0
+
+    def dPdV(self, other: "Bus", y: complex, derivedOnBus: "Bus", y_o_d: complex) -> float:
+        # p2/v2, termos 1 e 3 (cruzado)
+        if self == derivedOnBus and other != derivedOnBus:
+            return other.v * abs(y) * cos(cmath.phase(y) - self.o + other.o)
+
+        # p2/v2, termo 2 (proprio)
+        if self == derivedOnBus and other == derivedOnBus:
+            return 2 * self.v * y.real
+
+        # p3/v2, unico termo
+        if other == derivedOnBus:
+            return self.v * abs(y) * cos(cmath.phase(y) - self.o + other.o)
+
+        return 0
+
+    # precisa do y entre o derivado e o outro
+    def dQdO(self, other: "Bus", y: complex, derivedOnBus: "Bus", y_o_d: complex) -> float:
+        # q2/o2 (diz q3/o2) termos 1 e 3
+        if self == derivedOnBus and self != other:
+            return self.v * other.v * abs(y) * cos(cmath.phase(y) - self.o + other.o)
+
+        # q2/o3 (diz q3/o3), unico termo
+        if self != derivedOnBus and self == other:
+            return (
+                -self.v
+                * derivedOnBus.v
+                * abs(y_o_d)
+                * cos(cmath.phase(y_o_d) - self.o + derivedOnBus.o)
+            )
+
+        return 0
+
+    def dQdV(self, other: "Bus", y: complex, derivedOnBus: "Bus", y_o_d: complex) -> float:
+        # q2/v2 (diz q3/v2), termos 1 e 3 (cruzado)
+        if self == derivedOnBus and other != derivedOnBus:
+            return -other.v * abs(y_o_d) * sin(cmath.phase(y_o_d) - derivedOnBus.o + other.o)
+
+        if self == derivedOnBus and other == derivedOnBus:
+            return -2 * other.v * abs(y) * sin(cmath.phase(y))
+
+        # TODO what if self != derivedOnBus?
+
+        return 0
 
 
 class PQBus(Bus):
@@ -117,6 +178,13 @@ class PowerFlow:
         x: list[float] = [[0] for _ in range(n)]
         j: list[list[float]] = [[0 for _ in range(n)] for _ in range(n)]
         s: list[float] = [[0] for _ in range(n)]
+        s_sch: list[float] = list[float]()
+        for namedIndex in self.indexes:
+            bus = self.buses[namedIndex.index]
+            if namedIndex.variable == "o":
+                s_sch.append(bus.p)
+            else:
+                s_sch.append(bus.q)
 
         for i in range(10):
 
@@ -125,60 +193,74 @@ class PowerFlow:
 
             def getPower(busIndex: int, _, power: str) -> float:
                 bus = self.buses[busIndex]
-                s: complex = sum(
+                if power == "p":
+                    return sum(
+                        [
+                            bus.calcP(other, self.yMatrix.y_matrix[busIndex][c])
+                            for c, other in enumerate(self.buses)
+                        ]
+                    )
+                return sum(
                     [
-                        bus.getPower(other, self.yMatrix.y_matrix[busIndex][c])
+                        bus.calcQ(other, self.yMatrix.y_matrix[busIndex][c])
                         for c, other in enumerate(self.buses)
                     ]
                 )
-                return s.real if power == "p" else s.imag
 
-            def getJacobianElement(
-                rowIndex: int, columnIndex: int, variable: str, power: str
-            ) -> float:
-                bus = self.buses[rowIndex]
-                other = self.buses[columnIndex]
-                g: float = self.yMatrix.y_matrix[rowIndex][columnIndex].real
-                b: float = self.yMatrix.y_matrix[rowIndex][columnIndex].imag
-                coso: float = cos(bus.o - other.o)
-                sino: float = sin(bus.o - other.o)
-
-                if variable == "o" and power == "p":  # ∂p/∂o
-                    return bus.v * other.v * (g * sino - b * coso)
-                elif variable == "v" and power == "p":  # ∂p/∂v
-                    return bus.v * (g * coso + b * sino)
-                elif variable == "o" and power == "q":  # ∂q/∂o
-                    return -bus.v * other.v * (g * sino + b * coso)
-                elif variable == "v" and power == "q":  # ∂q/∂v
-                    return bus.v * (g * sino - b * coso)
-                else:
-                    raise ValueError("Invalid variable or power")
+            def getJacobianElement(r: int, c: int, __, ___, diff: str) -> float:
+                rowBus = self.buses[r]
+                columnBus = self.buses[c]
+                call = None
+                if diff == "∂p/∂o":
+                    call = rowBus.dPdO
+                elif diff == "∂p/∂v":
+                    call = rowBus.dPdV
+                elif diff == "∂q/∂o":
+                    call = rowBus.dQdO
+                else:  # "∂q/∂v":
+                    call = rowBus.dQdV
+                return sum(
+                    [
+                        call(
+                            other=other,
+                            y=self.yMatrix.y_matrix[r][i],
+                            derivedOnBus=columnBus,
+                            y_o_d=self.yMatrix.y_matrix[c][i],
+                        )
+                        for (i, other) in enumerate(self.buses)
+                    ]
+                )
 
             x = self.__map_indexes_list(getVariable)
             s = self.__map_indexes_list(getPower)
             j = self.__map_indexes_matrix(getJacobianElement)
 
-            dX = numpy.dot(numpy.linalg.inv(j), s)
+            ds = [a_i - b_i for a_i, b_i in zip(s_sch, s)]
+
+            dX = numpy.dot(numpy.linalg.inv(j), ds)
 
             print(f"X: {x}")
             print(f"S: {s}")
+            print(f"S_sch: {s_sch}")
+            print(f"dS: {ds}")
             print("J: ")
             for row in j:
                 print("  [" + ", ".join(str(item) for item in row) + "]")
-
+            # return
             print(f"dX: {dX}")
 
             # Update
-            for variable in self.indexes:
-                if variable.variable == "o":
-                    o = self.buses[variable.index].o - dX[variable.index]
-                    self.buses[variable.index].o = o
-                    print(f"{variable}: {o}")
+            for i, namedIndex in enumerate(self.indexes):
+                busIndex = namedIndex.index
+                bus = self.buses[busIndex]
+                if namedIndex.variable == "o":
+                    bus.o += dX[i]
+                    print(f"{namedIndex}: {bus.o}rad / {bus.o * 180 / 3.14} deg")
 
-                elif variable.variable == "v":
-                    v = self.buses[variable.index].v - dX[variable.index]
-                    self.buses[variable.index].v = v
-                    print(f"{variable}: {v}")
+                elif namedIndex.variable == "v":
+                    bus.v += dX[i]
+                    print(f"{namedIndex}: {bus.v}")
+
         # end for
 
     # end solve
@@ -206,7 +288,7 @@ class PowerFlow:
     def print_indexes(self):
         x = self.__map_indexes_list(lambda index, variable, _: f"{variable}[{index+1}]")
         s = self.__map_indexes_list(lambda index, _, power: f"{power}[{index+1}]")
-        j = self.__map_indexes_matrix(lambda row, column, v, p: f"∂{p}{row+1}/∂{v}{column+1}")
+        j = self.__map_indexes_matrix(lambda row, column, v, p, _: f"∂{p}{row+1}/∂{v}{column+1}")
         for r, row in enumerate(j):
             print(
                 f"|{x[r]}| {"=" if r == 0 else " "} "
@@ -217,7 +299,7 @@ class PowerFlow:
             )
 
     def __map_indexes_matrix(
-        self, x: Callable[[int, int, str, str], Any]  # row, column, variable, power]
+        self, x: Callable[[int, int, str, str, str], Any]  # row, column, variable, power, diff]
     ) -> list[list[Any]]:
         return [
             [
@@ -226,6 +308,7 @@ class PowerFlow:
                     column_index.index,
                     column_index.variable,
                     row_index.power,
+                    f"∂{row_index.power}/∂{column_index.variable}",
                 )
                 for _, column_index in enumerate(self.indexes)
             ]
@@ -239,44 +322,47 @@ class PowerFlow:
 
 
 def main():
-    powerFlow = PowerFlow()
+    # powerFlow = PowerFlow()
 
-    bus1 = powerFlow.add_bus(SlackBus("Slack bus", v_esp=1, o_esp=0))
-    bus2 = powerFlow.add_bus(PQBus("Load", load=complex(0.9, 0.5)))
-    bus3 = powerFlow.add_bus(
-        PVBus(
-            "Generator",
-            v_esp=1.01,
-            generator=complex(1.3),
-            load=complex(0.7, 0.4),
-        ),
-        y=complex(0),
-    )
-    powerFlow.print_indexes()
+    # bus1 = powerFlow.add_bus(SlackBus("Slack bus", v_esp=1, o_esp=0))
+    # bus2 = powerFlow.add_bus(PQBus("Load", load=complex(0.9, 0.5)))
+    # bus3 = powerFlow.add_bus(
+    #     PVBus(
+    #         "Generator",
+    #         v_esp=1.01,
+    #         generator=complex(1.3),
+    #         load=complex(0.7, 0.4),
+    #     ),
+    #     y=complex(0),
+    # )
+    # powerFlow.print_indexes()
 
-    powerFlow.connectBuses(bus1, bus2, z=complex(0, 0.1))
-    powerFlow.connectBuses(bus1, bus3, z=complex(0, 0.25))
-    powerFlow.connectBuses(bus2, bus3, z=complex(0, 0.2))
+    # powerFlow.connectBuses(bus1, bus2, z=complex(0, 0.1))
+    # powerFlow.connectBuses(bus1, bus3, z=complex(0, 0.25))
+    # powerFlow.connectBuses(bus2, bus3, z=complex(0, 0.2))
 
-    powerFlow.solve()
+    # powerFlow.solve()
     # v2 = 0.96674
     # o2 = -2.7596 graus
     # o3 = 2.347 graus
-    # powerflow = PowerFlow()
-    # bus1 = powerflow.add_bus(SlackBus("Slack bus", v_esp=1.02, o_esp=0))
-    # bus2 = powerflow.add_bus(PQBus("Load", load=complex(2, 0.5)))
-    # bus3 = powerflow.add_bus(
-    #     PVBus("Generator", v_esp=1.03, generator=complex(1.5)),
-    #     y=complex(0),
-    # )
+    powerflow = PowerFlow()
+    bus1 = powerflow.add_bus(SlackBus("1 Slack bus", v_esp=1.02, o_esp=0))
+    bus2 = powerflow.add_bus(PQBus("2 Load", load=complex(2, 0.5)))
+    bus3 = powerflow.add_bus(PVBus("3 Generator", v_esp=1.03, generator=complex(1.5)))
+    # bus4 = powerflow.add_bus(PQBus("Load2", load=complex(3)))
+    # bus5 = powerflow.add_bus(PVBus("Generator2", v_esp=1.03, generator=complex(2)))
 
-    # powerflow.connectBuses(bus1, bus2, y=complex(5, -15))
-    # powerflow.connectBuses(bus1, bus3, y=complex(10, -40))
-    # powerflow.connectBuses(bus2, bus3, y=complex(15, -50))
+    powerflow.connectBuses(bus1, bus2, y=complex(5, -15))
+    powerflow.connectBuses(bus1, bus3, y=complex(10, -40))
+    powerflow.connectBuses(bus2, bus3, y=complex(15, -50))
+    # powerflow.connectBuses(bus2, bus4, y=complex(10, -30))
+    # powerflow.connectBuses(bus3, bus4, y=complex(5, -20))
+    # powerflow.connectBuses(bus4, bus5, y=complex(10, -30))
+    # powerflow.connectBuses(bus3, bus5, y=complex(10, -30))
 
-    # powerflow.print_indexes()
-    # # return
-    # powerflow.solve()
+    powerflow.print_indexes()
+    # return
+    powerflow.solve()
 
 
 if __name__ == "__main__":
