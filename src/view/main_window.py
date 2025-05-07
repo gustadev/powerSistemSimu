@@ -57,6 +57,7 @@ class MainWindow(QMainWindow):
 
         # Create the board view.
         board = BoardView()
+
         simulatorInstance = SimulatorController.instance()
 
         # Connect button signal to the board's addSquare method.
@@ -74,12 +75,13 @@ class MainWindow(QMainWindow):
 
         # Create a horizontal layout to place the board view on the left and a new widget on the right.
         
-        horizontalLayout.addWidget(board)
-        
+
         rightWidget = ElementList()
         rightWidget.setMaximumWidth(200)  
         rightWidget.setMinimumWidth(200)
+        horizontalLayout.addWidget(board)
         horizontalLayout.addWidget(rightWidget)
+        # horizontalLayout.setContentsMargins(5, 5, 5, 5)
         
         layoutBtnActions.addWidget(runPowerFlowButton)
         layoutBtnActions.addWidget(printNetworkButton)

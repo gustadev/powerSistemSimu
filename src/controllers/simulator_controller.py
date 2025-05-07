@@ -150,6 +150,7 @@ class SimulatorController:
             print(self.__network.lines_t.p0)
             print(self.__network.buses_t.v_ang * 180 / np.pi)
             print(self.__network.buses_t.v_mag_pu)
+
         except Exception as e:
             print(f"Power flow failed: {e}")
 
@@ -160,6 +161,8 @@ class SimulatorController:
         print(self.__network.generators)
         print(self.__network.loads)
         print(self.__network.links)
+        self.__network.export_to_csv_folder("Output_Data")
+        
 
     def getElementNames(self, ids: list[str]) -> str:
         names = []

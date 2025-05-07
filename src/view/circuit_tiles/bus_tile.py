@@ -20,7 +20,7 @@ class BusNodeTile(ElementTile[BusNode]):
     def build_form(self, layout: QVBoxLayout):
         super().build_form(layout)
         self.voltageField = TextField[float](
-            title="v_nom",
+            title="V_nom",
             trailing="kV",
             type=float,
             validators=[NotEmptyValidator(), NumberValidator(min=0)],
@@ -28,7 +28,7 @@ class BusNodeTile(ElementTile[BusNode]):
         layout.addWidget(self.voltageField)
 
         self.connectionsField = TextField[str](
-            title="nodes",
+            title="Nodes",
             type=str,
             enabled=False,
         )

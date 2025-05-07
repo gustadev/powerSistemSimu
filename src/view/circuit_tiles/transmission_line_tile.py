@@ -25,7 +25,7 @@ class TransmissionLineTile(ElementTile[TransmissionLineElement]):
         self.resistanceField = TextField[float](
             title="r",
             value=self.element.resistance,
-            trailing="ohm",
+            trailing="Ohm",
             type=float,
             validators=[NotEmptyValidator(), NumberValidator(min=0)],
         )
@@ -34,7 +34,7 @@ class TransmissionLineTile(ElementTile[TransmissionLineElement]):
         self.reactanceField = TextField[float](
             title="x",
             value=self.element.reactance,
-            trailing="ohm",
+            trailing="Ohm",
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
         )

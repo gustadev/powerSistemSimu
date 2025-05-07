@@ -22,14 +22,14 @@ class GeneratorTile(ElementTile[GeneratorNode]):
     def build_form(self, layout: QVBoxLayout):
         super().build_form(layout)
         self.controlField = TextField(
-            title="control",
+            title="Control",
             type=str,
             validators=[NotEmptyValidator()],
         )
         layout.addWidget(self.controlField)
 
         self.powerField = TextField[float](
-            title="power",
+            title="Power",
             trailing="kVA",
             type=float,
             validators=[NotEmptyValidator(), NumberValidator(min=0)],
@@ -37,7 +37,7 @@ class GeneratorTile(ElementTile[GeneratorNode]):
         layout.addWidget(self.powerField)
 
         self.busField = TextField(
-            title="bus",
+            title="Bus",
             type=str,
             enabled=False,
         )

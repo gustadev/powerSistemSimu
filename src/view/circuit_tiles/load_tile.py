@@ -22,7 +22,7 @@ class LoadTile(ElementTile[LoadNode]):
     def build_form(self, layout: QVBoxLayout):
         super().build_form(layout)
         self.powerField = TextField[float](
-            title="p set",
+            title="P set",
             trailing="kVA",
             type=float,
             validators=[NotEmptyValidator(), NumberValidator(min=0)],
@@ -30,7 +30,7 @@ class LoadTile(ElementTile[LoadNode]):
         layout.addWidget(self.powerField)
 
         self.busField = TextField(
-            title="bus",
+            title="Bus",
             type=str,
             enabled=False,
         )

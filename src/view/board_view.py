@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QGraphicsScene,
 )
 from PySide6.QtGui import QPainter,Qt
+from PySide6.QtCore import QRectF
 
 from controllers.simulator_controller import ElementEvent, SimulatorController
 from models.circuit_element import CircuitElement, DoubleConnectionElement
@@ -22,6 +23,26 @@ class BoardView(QGraphicsView):
         self.simulatorWidgets = dict()
         simulatorInstance = SimulatorController.instance()
         simulatorInstance.listen(self.circuitListener)
+        
+
+    def drawBackground(self, painter: QPainter, rect: QRectF):
+        painter.setPen(Qt.GlobalColor.lightGray)
+        super().drawBackground(painter, rect)
+        
+        # Define grid spacing
+        gridSize = 20
+
+        # Get the visible area of the scene
+        left = int(rect.left()) - (int(rect.left()) % gridSize)
+        top = int(rect.top()) - (int(rect.top()) % gridSize)
+
+        # Draw vertical lines
+        for x in range(left, int(rect.right()), gridSize):
+            painter.drawLine(x, rect.top(), x, rect.bottom())
+
+        # Draw horizontal lines
+        for y in range(top, int(rect.bottom()), gridSize):
+            painter.drawLine(rect.left(), y, rect.right(), y)
 
     # Listens to the simulator events and updates the board
     def circuitListener(self, element: CircuitElement, event: ElementEvent):

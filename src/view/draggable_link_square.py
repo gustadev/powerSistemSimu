@@ -14,7 +14,7 @@ class DraggableLinkSquare(QGraphicsRectItem):
     def __init__(self, x, y, parent: QGraphicsRectItem):
         super().__init__(x, y, 10, 10, parent=parent)
         self.parent = parent
-        self.setBrush(Qt.red)
+        self.setBrush(Qt.GlobalColor.red)
         self.setFlag(QGraphicsRectItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setFlag(QGraphicsRectItem.GraphicsItemFlag.ItemIsFocusable, True)
         self.drag_line = None

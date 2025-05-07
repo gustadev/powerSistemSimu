@@ -28,16 +28,18 @@ class ElementList(QWidget):
         self.items = dict()
         scroll_area = QScrollArea(self)
         scroll_area.setWidgetResizable(True)
+        
 
         container = QWidget()
         container.setContentsMargins(0, 0, 0, 0)
         self.inner_layout = QVBoxLayout(container)
-        self.inner_layout.setAlignment(Qt.AlignTop)
+        self.inner_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.inner_layout.setContentsMargins(2, 2, 2, 2)
-        self.inner_layout.setSpacing(2)
+        self.inner_layout.setSpacing(0)
 
         scroll_area.setWidget(container)
         self.layout().addWidget(scroll_area)
+        self.layout().setContentsMargins(0, 0, 0, 0)
 
     def circuitListener(self, element: CircuitElement, event: ElementEvent):
         if event is ElementEvent.CREATED:

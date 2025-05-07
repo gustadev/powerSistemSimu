@@ -25,6 +25,7 @@ class ElementTile(Generic[E], QWidget):
         self.build_widget()
         self.update_form_values()
 
+
     @property
     def element(self) -> E:
         return self.__element
@@ -44,7 +45,7 @@ class ElementTile(Generic[E], QWidget):
     def build_widget(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout.setSpacing(2)
 
         self._pending_title = TitleLabel(self.element.type)
         layout.addWidget(self._pending_title)
@@ -57,7 +58,7 @@ class ElementTile(Generic[E], QWidget):
 
     def build_form(self, layout: QVBoxLayout):
         self.nameField = TextField(
-            title="name", type=str, validators=[NotEmptyValidator()]
+            title="Name", type=str, validators=[NotEmptyValidator()]
         )
         layout.addWidget(self.nameField)
 

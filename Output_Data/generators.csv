@@ -1,0 +1,2 @@
+name,bus,control,p_nom,build_year,min_up_time,min_down_time,up_time_before,down_time_before
+Ge_1,Bu_1,Slack,2000.0,0,0,0,1,0
