@@ -263,6 +263,13 @@ class PowerFlow:
                     bus.v += dX[i]
                     print(f"{namedIndex}: {bus.v}")
 
+            err = sum([abs(x) for x in dX])
+            if sum([abs(x) for x in dX]) < 1e-6:
+                print(f"Converged to solution after {i} iterations. Error: {err}")
+                break
+            else:
+                print(f"Iteration {i} error: {err}")
+
         # end for
 
     # end solve
