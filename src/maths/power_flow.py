@@ -165,13 +165,12 @@ class PowerFlow:
         bus1Index = self.buses.index(bus1)
         bus2Index = self.buses.index(bus2)
         self.yMatrix.connect_bus_to_bus(self.__get_y_from_z_or_y(z, y), bus1Index, bus2Index)
-
-    def __get_y_from_z_or_y(self, z: complex | None, y: complex | None) -> complex:
+    
+    # TODO include tap LT 
+    def __get_y_from_z_or_y(self, z: complex | None, y: complex) -> complex:
         if z is not None:
-            return 1 / z
-        if y is not None:
-            return y
-        raise ValueError("Either z or y must be provided")
+            return 1 / z + y
+        return y
 
     def solve(self):
         print("Solving power flow...")
