@@ -19,9 +19,7 @@ class BusSquareMatrix:
     def generator(
         self, size: int, builder: Callable[[int, int], complex] = lambda r, c: zero
     ) -> "BusSquareMatrix":
-        m: list[list[complex | float]] = [
-            [builder(r, c) for c in range(size)] for r in range(size)
-        ]
+        m: list[list[complex | float]] = [[builder(r, c) for c in range(size)] for r in range(size)]
         return BusSquareMatrix(m)
 
     @property
@@ -43,14 +41,10 @@ class BusSquareMatrix:
         def mapper(i: int, j: int) -> complex:
             return (
                 self.__m[i][j]
-                - self.__m[i][size - 1]
-                * self.__m[size - 1][j]
-                / self.__m[size - 1][size - 1]
+                - self.__m[i][size - 1] * self.__m[size - 1][j] / self.__m[size - 1][size - 1]
             )
 
-        return BusSquareMatrix(
-            [[mapper(i, j) for i in range(new_size)] for j in range(new_size)]
-        )
+        return BusSquareMatrix([[mapper(i, j) for i in range(new_size)] for j in range(new_size)])
 
     def increase_order(
         self,
@@ -75,9 +69,7 @@ class BusSquareMatrix:
         return BusSquareMatrix(m)
 
     def __str__(self) -> str:
-        return (
-            "\n".join([" ".join([f"{c:.2f}" for c in row]) for row in self.__m]) + "\n"
-        )
+        return "\n".join([" ".join([f"{c:+10.2f}" for c in row]) for row in self.__m]) + "\n"
 
     def __getitem__(self, row: int) -> list[complex | float]:
         return self.__m[row]
