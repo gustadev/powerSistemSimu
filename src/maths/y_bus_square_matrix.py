@@ -22,23 +22,29 @@ class YBusSquareMatrix:
         return new_bus
 
     # Caso 4 - Conectar um barramento a outro barramento. Não aumenta a ordem da matriz.
-    def connect_bus_to_bus(self, y: complex, source: int, target: int) -> None:
+    def connect_bus_to_bus(
+        self,
+        y: complex,
+        source: int,
+        target: int,
+        bc: float = 0.0,
+        tap: complex = complex(1.0),
+    ) -> None:
         if self.__log_print:
             print(f"==========================================")
             print(
-                f"Case 4: connecting bus {source+1} to bus {target+1}, with y = {y}\n"
+                f"Case 4: connecting bus {source+1} to bus {target+1}, with y = {y}, tap={tap}:1, bc={bc}\n"
             )
 
-        # TODO fix
         def mapper(r: int, c: int) -> complex:
             if r == c and r == source:
-                return self.__m[r][c] + y
+                return self.__m[r][r] + y / tap + y * (tap - 1) / tap
             elif r == c and r == target:
-                return self.__m[r][c] + y
+                return self.__m[r][r] + y / tap + y * (1 - tap) / (tap * tap)
             elif r == source and c == target:
-                return -y
+                return -y / tap
             elif r == target and c == source:
-                return -y
+                return -y / tap
             else:
                 return self.__m[r][c]
 

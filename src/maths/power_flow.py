@@ -175,16 +175,21 @@ class PowerFlow:
         bus.index = len(self.buses) - 1
         return bus
 
+    # tap on bus2
     def connectBuses(
         self,
         bus1: Bus,
         bus2: Bus,
-        y: complex | None = complex(0),
+        y: complex | None = complex(0.0),
         z: complex | None = None,
+        bc: float = 0.0,
+        tap: complex = complex(1.0),
     ) -> None:
         bus1Index = self.buses.index(bus1)
         bus2Index = self.buses.index(bus2)
-        self.yMatrix.connect_bus_to_bus(self.__get_y_from_z_or_y(z, y), bus1Index, bus2Index)
+        self.yMatrix.connect_bus_to_bus(
+            self.__get_y_from_z_or_y(z, y), bus1Index, bus2Index, bc, tap
+        )
 
     # TODO include tap LT
     def __get_y_from_z_or_y(self, z: complex | None, y: complex) -> complex:
@@ -207,7 +212,7 @@ class PowerFlow:
             else:
                 s_sch.append(bus.q)
 
-        for iteration in range(1, 10):
+        for iteration in range(1, 10000):
 
             def getVariable(busIndex: int, variable: str, _) -> float:
                 return self.buses[busIndex].v if variable == "o" else self.buses[busIndex].v
