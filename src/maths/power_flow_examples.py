@@ -1,3 +1,4 @@
+from cmath import pi
 from power_flow import PQBus, PVBus, PowerFlow, SlackBus
 
 
@@ -7,7 +8,7 @@ def class_example():
     powerFlow = PowerFlow()
     bus1 = powerFlow.add_bus(SlackBus(name="Slack Bus", v_esp=1.05))
     bus2 = powerFlow.add_bus(PQBus(name="Load", load=complex(4, 2.5)))
-    bus3 = powerFlow.add_bus(PVBus(name="Generator", v_esp=1.04, generator=complex(2)))
+    bus3 = powerFlow.add_bus(PVBus(name="Generator", v_sch=1.04, generator=complex(2)))
 
     powerFlow.connectBuses(bus1, bus2, z=complex(0.02, 0.04))
     powerFlow.connectBuses(bus2, bus3, z=complex(0.0125, 0.025))
@@ -20,7 +21,7 @@ def class_example():
 
 # https://apnp.ifsul.edu.br/pluginfile.php/1700773/mod_resource/content/1/Trab2-1_IEEE_14_nos.pdf
 def example_14_buses():
-
+    degToRad = pi / 180
     powerFlow = PowerFlow()
 
     # N Name type v_base v_pu theta pg qg qmin qmax pd qd qshunt
@@ -40,24 +41,112 @@ def example_14_buses():
     # 14 Barra14 0 33 1,036 −16,04 14,9 5
     bus1 = powerFlow.add_bus(SlackBus(name="Slack Bus", v_esp=1.06))
     bus2 = powerFlow.add_bus(
-        PVBus(name="Generator", v_esp=1.045, generator=complex(40), load=complex(21.7, 12.7))
+        PVBus(
+            name="Generator",
+            v_sch=1.045,
+            o_ini=-4.98 * degToRad,
+            generator=complex(40),
+            load=complex(21.7, 12.7),
+        )
     )
     bus3 = powerFlow.add_bus(
-        PVBus(name="Generator", v_esp=1.01, generator=complex(0), load=complex(94.2, 19))
+        PVBus(
+            name="Generator",
+            v_sch=1.01,
+            o_ini=-12.72 * degToRad,
+            generator=complex(0),
+            load=complex(94.2, 19),
+        )
     )
-    bus4 = powerFlow.add_bus(PQBus(name="Load", load=complex(47.8, -3.9)))
-    bus5 = powerFlow.add_bus(PQBus(name="Load", load=complex(7.6, 1.6)))
+    bus4 = powerFlow.add_bus(
+        PQBus(
+            name="Load",
+            v_ini=1.019,
+            o_ini=-10.73 * degToRad,
+            load=complex(47.8, -3.9),
+        ),
+    )
+    bus5 = powerFlow.add_bus(
+        PQBus(
+            name="Load",
+            v_ini=1.02,
+            o_ini=-8.78 * degToRad,
+            load=complex(7.6, 1.6),
+        ),
+    )
     bus6 = powerFlow.add_bus(
-        PVBus(name="Generator", v_esp=1.07, generator=complex(0), load=complex(11.2, 7.5))
+        PVBus(
+            name="Generator",
+            v_sch=1.07,
+            o_ini=-14.22 * degToRad,
+            generator=complex(0),
+            load=complex(11.2, 7.5),
+        )
     )
-    bus7 = powerFlow.add_bus(PQBus(name="Load", load=complex(0)))
-    bus8 = powerFlow.add_bus(PVBus(name="Generator", v_esp=1.09, generator=complex(0)))
-    bus9 = powerFlow.add_bus(PQBus(name="Load", load=complex(29.5, 16.6)))
-    bus10 = powerFlow.add_bus(PQBus(name="Load", load=complex(9, 5.8)))
-    bus11 = powerFlow.add_bus(PQBus(name="Load", load=complex(3.5, 1.8)))
-    bus12 = powerFlow.add_bus(PQBus(name="Load", load=complex(6.1, 1.6)))
-    bus13 = powerFlow.add_bus(PQBus(name="Load", load=complex(13.5, 5.8)))
-    bus14 = powerFlow.add_bus(PQBus(name="Load", load=complex(14.9, 5)))
+    bus7 = powerFlow.add_bus(
+        PQBus(
+            name="Load",
+            v_ini=1.062,
+            o_ini=-13.37 * degToRad,
+            load=complex(0),
+        ),
+    )
+    bus8 = powerFlow.add_bus(
+        PVBus(
+            name="Generator",
+            v_sch=1.09,
+            o_ini=-13.36 * degToRad,
+            generator=complex(0),
+        ),
+    )
+    bus9 = powerFlow.add_bus(
+        PQBus(
+            name="Load",
+            v_ini=1.056,
+            o_ini=-14.94 * degToRad,
+            load=complex(29.5, 16.6),
+        ),
+    )
+    bus10 = powerFlow.add_bus(
+        PQBus(
+            name="Load",
+            v_ini=1.051,
+            o_ini=-15.10 * degToRad,
+            load=complex(9, 5.8),
+        ),
+    )
+    bus11 = powerFlow.add_bus(
+        PQBus(
+            name="Load",
+            v_ini=1.057,
+            o_ini=-14.79 * degToRad,
+            load=complex(3.5, 1.8),
+        ),
+    )
+    bus12 = powerFlow.add_bus(
+        PQBus(
+            name="Load",
+            v_ini=1.055,
+            o_ini=-15.07 * degToRad,
+            load=complex(6.1, 1.6),
+        ),
+    )
+    bus13 = powerFlow.add_bus(
+        PQBus(
+            name="Load",
+            v_ini=1.05,
+            o_ini=-15.16 * degToRad,
+            load=complex(13.5, 5.8),
+        ),
+    )
+    bus14 = powerFlow.add_bus(
+        PQBus(
+            name="Load",
+            v_ini=1.036,
+            o_ini=-16.04 * degToRad,
+            load=complex(14.9, 5),
+        ),
+    )
 
     # DE PARA Circuito R (%) X (%) BC (MVAr) Tap
     # 1 2 1 1,938 5,917 5,28 0,000
@@ -103,7 +192,7 @@ def example_14_buses():
 
     # print(f"Y=\n{powerFlow.yMatrix}\n")
 
-    powerFlow.solve(max_error=10000)
+    powerFlow.solve(max_error=10000, max_iterations=10000)
 
 
 # Source: https://lmsspada.kemdiktisaintek.go.id/pluginfile.php/18101/mod_resource/content/2/Load-Flow%20dengan%20Gauss%20Seidel%20dan%20Newton%20Raphson.pdf
@@ -112,7 +201,7 @@ def four_bus_example():
     powerFlow = PowerFlow()
 
     bus1 = powerFlow.add_bus(SlackBus(name="Slack Bus", v_esp=1.05))
-    bus2 = powerFlow.add_bus(PVBus(name="Load 1", v_esp=1.04, generator=complex(0.5)))
+    bus2 = powerFlow.add_bus(PVBus(name="Load 1", v_sch=1.04, generator=complex(0.5)))
     bus3 = powerFlow.add_bus(PQBus(name="Load 2", load=complex(1, -0.5)))
     bus4 = powerFlow.add_bus(PQBus(name="Load 3", load=complex(0.3, -0.1)))
 
@@ -150,9 +239,9 @@ def tap_tranformer_example():
 
 
 def main():
-    class_example()
+    # class_example()
     # example_14_buses()
-    # four_bus_example()
+    four_bus_example()
     # tap_tranformer_example()
 
 

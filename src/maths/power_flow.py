@@ -128,12 +128,16 @@ class PQBus(Bus):
         name: str,
         load: complex = complex(1),
         generator: complex = complex(0),
+        v_ini: float = 1,
+        o_ini: float = 0,
     ):
         p: float = generator.real - load.real
         q: float = generator.imag - load.imag
-        super().__init__(name=name, v=1, o=0, p=p, q=q)
-        self.p_esp = p
-        self.q_esp = q
+        super().__init__(name=name, v=v_ini, o=o_ini, p=p, q=q)
+        self.p_sch = p
+        self.q_sch = q
+        self.v_ini = v_ini
+        self.o_ini = o_ini
 
     def __str__(self) -> str:
         return f"#{self.index:2d} | {self.name:12s} | V: {self.v:+4.6f}∠ {(self.o*180/cmath.pi):+4.6f}° | P: {self.p:+4.6f} | Q: {self.q:+4.6f}"
@@ -143,14 +147,16 @@ class PVBus(Bus):  #
     def __init__(
         self,
         name: str,
-        v_esp: float = 1,
+        v_sch: float = 1,
+        o_ini: float = 0,
         generator: complex = complex(1),
         load: complex = complex(0),
     ):
         p = generator.real - load.real
-        super().__init__(name=name, v=v_esp, o=0, p=p, q=0)
-        self.v_esp = v_esp
-        self.p_esp = p
+        super().__init__(name=name, v=v_sch, o=o_ini, p=p, q=0)
+        self.v_sch = v_sch
+        self.p_sch = p
+        self.o_ini = o_ini
 
     def __str__(self) -> str:
         return f"#{self.index:2d} | {self.name:12s} | V: {self.v:+4.6f}∠ {(self.o*180/cmath.pi):+4.6f}° | P: {self.p:+4.6f} | Q: {self.q:+4.6f}"
