@@ -50,66 +50,76 @@ class Bus:
             sum += self.v * bus.v * y * sin(theta - self.o + bus.o)
         return -sum
 
-    # Ref https://www.intechopen.com/chapters/65445
-    # 66.8 −51.5 19.45
-    # −51.5 93.52 -15.45
-    # -20.55 15.45 63.2
-    def dPdO(self, other: "Bus", y: complex, derivedOnBus: "Bus", y_o_d: complex) -> float:
-        # serve para p2/o2 do exemplo (nos 2 termos)
-        if self == derivedOnBus and other != derivedOnBus:
-            return self.v * other.v * abs(y) * sin(cmath.phase(y) - self.o + other.o)
+    @staticmethod
+    def dPdO(  # dPi/dOj
+        i: int,
+        j: int,
+        buses: list["Bus"],
+        Y: YBusSquareMatrix,
+    ) -> float:
+        if i != j:
+            bus_i = buses[i]
+            bus_j = buses[j]
+            y_ij = abs(Y.y_matrix[i][j])
+            theta_ij = cmath.phase(Y.y_matrix[i][j])
+            return -bus_i.v * bus_j.v * y_ij * sin(theta_ij - bus_i.o + bus_j.o)
 
-        # serve para p2/o3 (unico termo)
-        if self != derivedOnBus and other == derivedOnBus:
-            return -self.v * other.v * abs(y) * sin(cmath.phase(y) - self.o + other.o)
+        bus = buses[i]
+        b = Y.y_matrix[i][i].imag
+        return -bus.v * bus.v * b - bus.calcQ(buses, Y)
 
-        return 0
+    @staticmethod
+    def dPdV(  # dPi/dOj
+        i: int,
+        j: int,
+        buses: list["Bus"],
+        Y: YBusSquareMatrix,
+    ) -> float:
+        if i != j:
+            bus_i = buses[i]
+            bus_j = buses[j]
+            y_ij = abs(Y.y_matrix[i][j])
+            theta_ij = cmath.phase(Y.y_matrix[i][j])
+            return bus_i.v * y_ij * cos(theta_ij - bus_i.o + bus_j.o)
 
-    def dPdV(self, other: "Bus", y: complex, derivedOnBus: "Bus", y_o_d: complex) -> float:
-        # p2/v2, termos 1 e 3 (cruzado)
-        if self == derivedOnBus and other != derivedOnBus:
-            return other.v * abs(y) * cos(cmath.phase(y) - self.o + other.o)
-
-        # p2/v2, termo 2 (proprio)
-        if self == derivedOnBus and other == derivedOnBus:
-            return 2 * self.v * y.real
-
-        # p3/v2, unico termo
-        if other == derivedOnBus:
-            return self.v * abs(y) * cos(cmath.phase(y) - self.o + other.o)
-
-        return 0
+        bus = buses[i]
+        g = Y.y_matrix[i][i].real
+        return bus.v * g + bus.calcP(buses, Y) / bus.v
 
     # precisa do y entre o derivado e o outro
-    def dQdO(self, other: "Bus", y: complex, derivedOnBus: "Bus", y_o_d: complex) -> float:
-        # q2/o2 (diz q3/o2) termos 1 e 3
-        if self == derivedOnBus and self != other:
-            return self.v * other.v * abs(y) * cos(cmath.phase(y) - self.o + other.o)
+    def dQdO(  # dPi/dOj
+        i: int,
+        j: int,
+        buses: list["Bus"],
+        Y: YBusSquareMatrix,
+    ) -> float:
+        if i != j:
+            bus_i = buses[i]
+            bus_j = buses[j]
+            y_ij = abs(Y.y_matrix[i][j])
+            theta_ij = cmath.phase(Y.y_matrix[i][j])
+            return -bus_i.v * bus_j.v * y_ij * cos(theta_ij - bus_i.o + bus_j.o)
 
-        # q2/o3 (diz q3/o3), unico termo
-        if self != derivedOnBus and self == other:
-            return (
-                -self.v
-                * derivedOnBus.v
-                * abs(y_o_d)
-                * cos(cmath.phase(y_o_d) - self.o + derivedOnBus.o)
-            )
+        bus = buses[i]
+        g = Y.y_matrix[i][i].real
+        return -bus.v * bus.v * g + bus.calcP(buses, Y)
 
-        return 0
+    def dQdV(  # dPi/dOj
+        i: int,
+        j: int,
+        buses: list["Bus"],
+        Y: YBusSquareMatrix,
+    ) -> float:
+        if i != j:
+            bus_i = buses[i]
+            bus_j = buses[j]
+            y_ij = abs(Y.y_matrix[i][j])
+            theta_ij = cmath.phase(Y.y_matrix[i][j])
+            return bus_i.v * y_ij * sin(theta_ij - bus_i.o + bus_j.o)
 
-    def dQdV(self, other: "Bus", y: complex, derivedOnBus: "Bus", y_o_d: complex) -> float:
-        # q2/v2 (diz q3/v2), termos 1 e 3 (cruzado)
-        if self == derivedOnBus and other != derivedOnBus:
-            return -other.v * abs(y_o_d) * sin(cmath.phase(y_o_d) - derivedOnBus.o + other.o)
-
-        if self == derivedOnBus and other == derivedOnBus:
-            return -2 * other.v * abs(y) * sin(cmath.phase(y))
-
-        # TODO is it right?
-        if self != derivedOnBus and other == derivedOnBus:
-            return -self.v * abs(y) * sin(cmath.phase(y) - self.o + other.o)
-
-        return 0
+        bus = buses[i]
+        b = Y.y_matrix[i][i].imag
+        return -bus.v * b + bus.calcQ(buses, Y) / bus.v
 
 
 class PQBus(Bus):
@@ -197,7 +207,7 @@ class PowerFlow:
             return 1 / z + y
         return y
 
-    def solve(self):
+    def solve(self, max_iterations: int = 10, max_error: float = 100.0) -> None:
         print("Solving power flow...")
 
         n: int = len(self.buses)
@@ -212,7 +222,7 @@ class PowerFlow:
             else:
                 s_sch.append(bus.q)
 
-        for iteration in range(1, 10000):
+        for iteration in range(1, max_iterations + 1):
 
             def getVariable(busIndex: int, variable: str, _) -> float:
                 return self.buses[busIndex].v if variable == "o" else self.buses[busIndex].v
@@ -226,28 +236,16 @@ class PowerFlow:
                 )
 
             def getJacobianElement(r: int, c: int, __, ___, diff: str) -> float:
-                rowBus = self.buses[r]
-                columnBus = self.buses[c]
-                call = None
+                dSdX = None
                 if diff == "∂p/∂o":
-                    call = rowBus.dPdO
+                    dSdX = Bus.dPdO
                 elif diff == "∂p/∂v":
-                    call = rowBus.dPdV
+                    dSdX = Bus.dPdV
                 elif diff == "∂q/∂o":
-                    call = rowBus.dQdO
-                else:  # "∂q/∂v":
-                    call = rowBus.dQdV
-                return sum(
-                    [
-                        call(
-                            other=other,
-                            y=self.yMatrix.y_matrix[r][i],
-                            derivedOnBus=columnBus,
-                            y_o_d=self.yMatrix.y_matrix[c][i],
-                        )
-                        for (i, other) in enumerate(self.buses)
-                    ]
-                )
+                    dSdX = Bus.dQdO
+                else:
+                    dSdX = Bus.dQdV
+                return dSdX(i=r, j=c, buses=self.buses, Y=self.yMatrix)
 
             x = self.__map_indexes_list(getVariable)
             s = self.__map_indexes_list(getPower)
@@ -280,6 +278,10 @@ class PowerFlow:
                     print(f"{namedIndex}: {bus.v:20.6f}pu")
 
             err = sum([abs(x) for x in dX])
+            if err > max_error:
+                print(f"Max error reached: {err} > {max_error}")
+                break
+
             if sum([abs(x) for x in dX]) < 1e-10:
                 print(f"Converged to solution after {iteration} iterations. Error: {err}")
                 break

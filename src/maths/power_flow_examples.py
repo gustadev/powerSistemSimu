@@ -87,9 +87,9 @@ def example_14_buses():
     powerFlow.connectBuses(bus2, bus5, z=complex(0.05695, 0.17388), bc=3.46)
     powerFlow.connectBuses(bus3, bus4, z=complex(0.06701, 0.17103), bc=1.28)
     powerFlow.connectBuses(bus4, bus5, z=complex(0.01335, 0.04211), bc=0)
-    powerFlow.connectBuses(bus4, bus7, z=complex(0, 0.20912), tap=0.978)
-    powerFlow.connectBuses(bus4, bus9, z=complex(0, 0.55618), tap=0.969)
-    powerFlow.connectBuses(bus5, bus6, z=complex(0, 0.25202), tap=0.932)
+    powerFlow.connectBuses(bus7, bus4, z=complex(0, 0.20912), tap=0.978)
+    powerFlow.connectBuses(bus9, bus4, z=complex(0, 0.55618), tap=0.969)
+    powerFlow.connectBuses(bus6, bus5, z=complex(0, 0.25202), tap=0.932)
     powerFlow.connectBuses(bus6, bus11, z=complex(0.09498, 0.1989))
     powerFlow.connectBuses(bus6, bus12, z=complex(0.12291, 0.25581))
     powerFlow.connectBuses(bus6, bus13, z=complex(0.06615, 0.13027))
@@ -103,7 +103,7 @@ def example_14_buses():
 
     # print(f"Y=\n{powerFlow.yMatrix}\n")
 
-    powerFlow.solve()
+    powerFlow.solve(max_error=10000)
 
 
 # Source: https://lmsspada.kemdiktisaintek.go.id/pluginfile.php/18101/mod_resource/content/2/Load-Flow%20dengan%20Gauss%20Seidel%20dan%20Newton%20Raphson.pdf
@@ -139,7 +139,7 @@ def tap_tranformer_example():
 
     pf.connectBuses(bus3, bus1, z=complex(0, 0.0125), tap=0.8)
     pf.connectBuses(bus2, bus4, z=complex(0, 0.16), tap=1.25)
-    pf.connectBuses(bus3, bus4, z=parallel(complex(0,0.25), complex(0,0.2)))
+    pf.connectBuses(bus3, bus4, z=parallel(complex(0, 0.25), complex(0, 0.2)))
 
     print(pf.yMatrix)
 
@@ -150,7 +150,7 @@ def tap_tranformer_example():
 
 
 def main():
-    # class_example()
+    class_example()
     # example_14_buses()
     # four_bus_example()
     # tap_tranformer_example()
