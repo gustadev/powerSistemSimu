@@ -135,6 +135,9 @@ class PQBus(Bus):
         self.p_esp = p
         self.q_esp = q
 
+    def __str__(self) -> str:
+        return f"#{self.index:2d} | {self.name:12s} | V: {self.v:+4.6f}∠ {(self.o*180/cmath.pi):+4.6f}° | P: {self.p:+4.6f} | Q: {self.q:+4.6f}"
+
 
 class PVBus(Bus):  #
     def __init__(
@@ -149,6 +152,9 @@ class PVBus(Bus):  #
         self.v_esp = v_esp
         self.p_esp = p
 
+    def __str__(self) -> str:
+        return f"#{self.index:2d} | {self.name:12s} | V: {self.v:+4.6f}∠ {(self.o*180/cmath.pi):+4.6f}° | P: {self.p:+4.6f} | Q: {self.q:+4.6f}"
+
 
 class SlackBus(Bus):  # knows delta
     def __init__(
@@ -160,6 +166,9 @@ class SlackBus(Bus):  # knows delta
         super().__init__(name=name, v=v_esp, o=o_esp, p=1, q=0)
         self.v_esp = v_esp
         self.o_esp = o_esp
+
+    def __str__(self) -> str:
+        return f"#{self.index:2d} | {self.name:12s} | V: {self.v:+4.6f}∠ {(self.o*180/cmath.pi):+4.6f}° | P: {self.p:+4.6f} | Q: {self.q:+4.6f}"
 
 
 class VariableIndex:
@@ -223,9 +232,10 @@ class PowerFlow:
                 s_sch.append(bus.q)
 
         for iteration in range(1, max_iterations + 1):
+            print(f"\nIteration {iteration}:")
 
-            def getVariable(busIndex: int, variable: str, _) -> float:
-                return self.buses[busIndex].v if variable == "o" else self.buses[busIndex].v
+            # def getVariable(busIndex: int, variable: str, _) -> float:
+            #     return self.buses[busIndex].v if variable == "o" else self.buses[busIndex].v
 
             def getPower(busIndex: int, _, power: str) -> float:
                 bus = self.buses[busIndex]
@@ -247,7 +257,7 @@ class PowerFlow:
                     dSdX = Bus.dQdV
                 return dSdX(i=r, j=c, buses=self.buses, Y=self.yMatrix)
 
-            x = self.__map_indexes_list(getVariable)
+            # x = self.__map_indexes_list(getVariable)
             s = self.__map_indexes_list(getPower)
             j = self.__map_indexes_matrix(getJacobianElement)
 
@@ -255,10 +265,10 @@ class PowerFlow:
 
             dX = numpy.dot(numpy.linalg.inv(j), ds)
 
-            print(f"X: {x}")
-            print(f"S: {s}")
-            print(f"S_sch: {s_sch}")
-            print(f"dS: {ds}")
+            # print(f"X: {x}")
+            # print(f"S: {s}")
+            # print(f"S_sch: {s_sch}")
+            # print(f"dS: {ds}")
             print("J: ")
             for row in j:
                 print("  [" + ", ".join(f"{item:10.4f}" for item in row) + "]")
@@ -270,7 +280,12 @@ class PowerFlow:
                 busIndex = namedIndex.index
                 bus = self.buses[busIndex]
                 if namedIndex.variable == "o":
-                    bus.o += dX[i]
+                    newO = bus.o + dX[i]
+                    if newO > 2 * cmath.pi:
+                        newO = newO % (2 * cmath.pi)
+                    elif newO < -2 * cmath.pi:
+                        newO = newO % (-2 * cmath.pi)
+                    bus.o = newO
                     print(f"{namedIndex}: {bus.o:20.6f}rad / {(bus.o * 180 / cmath.pi):20.6f} deg")
 
                 elif namedIndex.variable == "v":
@@ -279,16 +294,20 @@ class PowerFlow:
 
             err = sum([abs(x) for x in dX])
             if err > max_error:
-                print(f"Max error reached: {err} > {max_error}")
-                break
+                print(f"Diverged.  {err} > |{max_error}| (max error)")
+                return
 
             if sum([abs(x) for x in dX]) < 1e-10:
-                print(f"Converged to solution after {iteration} iterations. Error: {err}")
+                print(f"|E| = {err}")
                 break
             else:
-                print(f"Iteration {iteration} error: {err}")
+                print(f"|E| =  {err}")
 
-        # end for
+        print("\nPower flow solved.")
+        for bus in self.buses:
+            bus.p = bus.calcP(self.buses, self.yMatrix)
+            bus.q = bus.calcQ(self.buses, self.yMatrix)
+            print(bus)
 
     # end solve
 
