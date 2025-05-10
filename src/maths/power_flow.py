@@ -115,7 +115,7 @@ class Bus:
             bus_j = buses[j]
             y_ij = abs(Y.y_matrix[i][j])
             theta_ij = cmath.phase(Y.y_matrix[i][j])
-            return bus_i.v * y_ij * sin(theta_ij - bus_i.o + bus_j.o)
+            return -bus_i.v * y_ij * sin(theta_ij - bus_i.o + bus_j.o)
 
         bus = buses[i]
         b = Y.y_matrix[i][i].imag
@@ -126,7 +126,7 @@ class PQBus(Bus):
     def __init__(
         self,
         name: str,
-        load: complex = complex(1),
+        load: complex = complex(0),
         generator: complex = complex(0),
         v_ini: float = 1,
         o_ini: float = 0,
@@ -188,10 +188,11 @@ class VariableIndex:
 
 
 class PowerFlow:
-    def __init__(self):
+    def __init__(self, base: float = 1):
         self.buses: list[Bus] = list[Bus]()
         self.yMatrix: YBusSquareMatrix = YBusSquareMatrix()
         self.indexes = list[VariableIndex]()
+        self.base = base
 
     def add_bus(self, bus: Bus, y: complex | None = complex(0), z: complex | None = None) -> Bus:
         self.buses.append(bus)
@@ -207,13 +208,17 @@ class PowerFlow:
         bus2: Bus,
         y: complex | None = complex(0.0),
         z: complex | None = None,
-        bc: float = 0.0,
-        tap: complex = complex(1.0),
+        bc: float = 0.0,  # TODO whe use it?
+        tap: complex = complex(1.0),  # TODO need to use it if there is PU?
     ) -> None:
         bus1Index = self.buses.index(bus1)
         bus2Index = self.buses.index(bus2)
         self.yMatrix.connect_bus_to_bus(
-            self.__get_y_from_z_or_y(z, y), bus1Index, bus2Index, bc, tap
+            self.__get_y_from_z_or_y(z, y),
+            bus1Index,
+            bus2Index,
+            0,  # bc
+            1,  # tap
         )
 
     # TODO include tap LT
@@ -232,24 +237,25 @@ class PowerFlow:
         s_sch: list[float] = list[float]()
         for namedIndex in self.indexes:
             bus = self.buses[namedIndex.index]
-            if namedIndex.variable == "o":
-                s_sch.append(bus.p)
-            else:
-                s_sch.append(bus.q)
+            if namedIndex.variable == "o" and (isinstance(bus, PVBus) or isinstance(bus, PQBus)):
+                s_sch.append(bus.p_sch)
+            elif namedIndex.variable == "v" and (isinstance(bus, PVBus) or isinstance(bus, PQBus)):
+                s_sch.append(bus.q_sch)
 
         for iteration in range(1, max_iterations + 1):
             print(f"\nIteration {iteration}:")
 
-            # def getVariable(busIndex: int, variable: str, _) -> float:
-            #     return self.buses[busIndex].v if variable == "o" else self.buses[busIndex].v
-
-            def getPower(busIndex: int, _, power: str) -> float:
+            def getPowerResidues(busIndex: int, variable: str, power: str) -> float:
                 bus = self.buses[busIndex]
-                return (
-                    bus.calcP(self.buses, self.yMatrix)
-                    if power == "p"
-                    else bus.calcQ(self.buses, self.yMatrix)
-                )
+                if power == "p" and (isinstance(bus, PQBus) or isinstance(bus, PVBus)):
+                    p_cal = bus.calcP(self.buses, self.yMatrix)
+                    p_sch = bus.p_sch / self.base  # TODO where more to update?
+                    return p_sch - p_cal
+                elif power == "q" and (isinstance(bus, PQBus) or isinstance(bus, PVBus)):
+                    q_cal = bus.calcQ(self.buses, self.yMatrix)
+                    q_sch = bus.q_sch / self.base  # TODO where more to update?
+                    return q_sch - q_cal
+                return 0
 
             def getJacobianElement(r: int, c: int, __, ___, diff: str) -> float:
                 dSdX = None
@@ -263,25 +269,17 @@ class PowerFlow:
                     dSdX = Bus.dQdV
                 return dSdX(i=r, j=c, buses=self.buses, Y=self.yMatrix)
 
-            # x = self.__map_indexes_list(getVariable)
-            s = self.__map_indexes_list(getPower)
+            ds = self.__map_indexes_list(getPowerResidues)
             j = self.__map_indexes_matrix(getJacobianElement)
-
-            ds = [a_i - b_i for a_i, b_i in zip(s_sch, s)]
 
             dX = numpy.dot(numpy.linalg.inv(j), ds)
 
-            # print(f"X: {x}")
-            # print(f"S: {s}")
-            # print(f"S_sch: {s_sch}")
-            # print(f"dS: {ds}")
             print("J: ")
             for row in j:
                 print("  [" + ", ".join(f"{item:10.4f}" for item in row) + "]")
-            # return
+
             print(f"dX: {dX}")
-            # return
-            # Update
+
             for i, namedIndex in enumerate(self.indexes):
                 busIndex = namedIndex.index
                 bus = self.buses[busIndex]
@@ -300,22 +298,20 @@ class PowerFlow:
 
             err = sum([abs(x) for x in dX])
             if err > max_error:
-                print(f"Diverged.  {err} > |{max_error}| (max error)")
+                print(f"|E| = {err}.  Diverged at {iteration}.")
                 return
 
             if sum([abs(x) for x in dX]) < 1e-10:
-                print(f"|E| = {err}")
+                print(f"|E| = {err}.  Converged at {iteration}.")
                 break
             else:
-                print(f"|E| =  {err}")
+                print(f"|E| = {err}.  End.")
 
         print("\nPower flow solved.")
         for bus in self.buses:
             bus.p = bus.calcP(self.buses, self.yMatrix)
             bus.q = bus.calcQ(self.buses, self.yMatrix)
             print(bus)
-
-    # end solve
 
     def print_state(self):
         for bus in self.buses:

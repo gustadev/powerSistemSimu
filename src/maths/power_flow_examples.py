@@ -1,6 +1,8 @@
 from cmath import pi
 from power_flow import PQBus, PVBus, PowerFlow, SlackBus
 
+degToRad: float = pi / 180
+
 
 # Source: https://apnp.ifsul.edu.br/pluginfile.php/1698423/mod_resource/content/4/6%20Fluxo%20de%20Pot%C3%AAncia.pdf
 def class_example():
@@ -21,24 +23,7 @@ def class_example():
 
 # https://apnp.ifsul.edu.br/pluginfile.php/1700773/mod_resource/content/1/Trab2-1_IEEE_14_nos.pdf
 def example_14_buses():
-    degToRad = pi / 180
-    powerFlow = PowerFlow()
-
-    # N Name type v_base v_pu theta pg qg qmin qmax pd qd qshunt
-    # 1 Barra1 2 132 1,060 0,0 232,4 −16,5 −9999 99999
-    # 2 Barra2 1 132 1,045 −4,98 40 43,56 −40 50 21,7 12,7
-    # 3 Barra3 1 132 1,010 −12,72 0 25,08 0 40 94,2 19
-    # 4 Barra4 0 132 1,019 −10,73 47,8 −3,9
-    # 5 Barra5 0 132 1,020 −8,78 7,6 1,6
-    # 6 Barra6 1 33 1,070 −14,22 0 12,73 −6 24 11,2 7,5
-    # 7 Barra7 0 33 1,062 −13,37
-    # 8 Barra8 1 33 1,090 −13,36 0 17,62 −6 24
-    # 9 Barra9 0 33 1,056 −14,94 29,5 16,6 19
-    # 10 Barra10 0 33 1,051 −15,10 9 5,8
-    # 11 Barra11 0 33 1,057 −14,79 3,5 1,8
-    # 12 Barra12 0 33 1,055 −15,07 6,1 1,6
-    # 13 Barra13 0 33 1,050 −15,16 13,5 5,8
-    # 14 Barra14 0 33 1,036 −16,04 14,9 5
+    powerFlow = PowerFlow(base=100) # 100MVA
     bus1 = powerFlow.add_bus(SlackBus(name="Slack Bus", v_esp=1.06))
     bus2 = powerFlow.add_bus(
         PVBus(
@@ -148,27 +133,6 @@ def example_14_buses():
         ),
     )
 
-    # DE PARA Circuito R (%) X (%) BC (MVAr) Tap
-    # 1 2 1 1,938 5,917 5,28 0,000
-    # 1 5 1 5,403 22,304 4,92 0,000
-    # 2 3 1 4,699 19,797 4,38 0,000
-    # 2 4 1 5,811 17,632 3,40 0,000
-    # 2 5 1 5,695 17,388 3,46 0,000
-    # 3 4 1 6,701 17,103 1,28 0,000
-    # 4 5 1 1,335 4,211 0 0,000
-    # 4 7 1 0 20,912 0 0,978
-    # 4 9 1 0 55,618 0 0,969
-    # 5 6 1 0 25,202 0 0,932
-    # 6 11 1 9,498 19,890 0 0,000
-    # 6 12 1 12,291 25,581 0 0,000
-    # 6 13 1 6,615 13,027 0 0,000
-    # 7 8 1 0 17,615 0 0,000
-    # 7 9 1 0 11,001 0 0,000
-    # 9 10 1 3,181 8,450 0 0,000
-    # 9 14 1 12,711 27,038 0 0,000
-    # 10 11 1 8,205 19,207 0 0,000
-    # 12 13 1 22,092 19,988 0 0,000
-    # 13 14 1 17,093 34,802 0 0,000
     powerFlow.connectBuses(bus1, bus2, z=complex(0.01938, 0.05917), bc=5.28)
     powerFlow.connectBuses(bus1, bus5, z=complex(0.05403, 0.22304), bc=4.92)
     powerFlow.connectBuses(bus2, bus3, z=complex(0.04699, 0.19797), bc=4.38)
@@ -190,9 +154,7 @@ def example_14_buses():
     powerFlow.connectBuses(bus12, bus13, z=complex(0.22092, 0.19988))
     powerFlow.connectBuses(bus13, bus14, z=complex(0.17093, 0.34802))
 
-    # print(f"Y=\n{powerFlow.yMatrix}\n")
-
-    powerFlow.solve(max_error=10000, max_iterations=10000)
+    powerFlow.solve(max_error=10000000, max_iterations=10)
 
 
 # Source: https://lmsspada.kemdiktisaintek.go.id/pluginfile.php/18101/mod_resource/content/2/Load-Flow%20dengan%20Gauss%20Seidel%20dan%20Newton%20Raphson.pdf
@@ -238,11 +200,47 @@ def tap_tranformer_example():
     #     |    0      j5    j9   -j13|
 
 
+def eleven_buses_task():
+    powerFlow = PowerFlow()
+    bus1 = powerFlow.add_bus(PQBus.from_v_o(v_ini=1.20, o_ini=0), z=complex(0, 0.2))
+
+    bus2 = powerFlow.add_bus(PQBus(name="Load1"))
+    bus3 = powerFlow.add_bus(PQBus(name="Load2"))
+    bus4 = powerFlow.add_bus(PQBus(name="Load3"))
+    bus5 = powerFlow.add_bus(PQBus(name="Load4", load=complex(0, -5)))
+    bus6 = powerFlow.add_bus(PQBus(name="Load5"))
+    bus7 = powerFlow.add_bus(PQBus(name="Load6"))
+    bus8 = powerFlow.add_bus(PQBus(name="Load7"))
+    bus9 = powerFlow.add_bus(PQBus(name="Load8"))
+
+    bus10 = powerFlow.add_bus(PQBus.from_v_o(v_ini=1.10, o_ini=-26 * degToRad), z=complex(0, 0.15))
+    bus11 = powerFlow.add_bus(PQBus.from_v_o(v_ini=1.05, o_ini=-degToRad), z=complex(0, 0.25))
+
+    powerFlow.connectBuses(bus1, bus2, z=complex(0, 0.06))
+    powerFlow.connectBuses(bus2, bus3, z=complex(0, 0.30))
+    powerFlow.connectBuses(bus2, bus5, z=complex(0, 0.15))
+    powerFlow.connectBuses(bus2, bus6, z=complex(0, 0.45))
+    powerFlow.connectBuses(bus3, bus4, z=complex(0, 0.40))
+    powerFlow.connectBuses(bus3, bus6, z=complex(0, 0.40))
+    powerFlow.connectBuses(bus4, bus6, z=complex(0, 0.60))
+    powerFlow.connectBuses(bus4, bus9, z=complex(0, 0.70))
+    powerFlow.connectBuses(bus4, bus10, z=complex(0, 0.08))
+    powerFlow.connectBuses(bus5, bus7, z=complex(0, 0.43))
+    powerFlow.connectBuses(bus6, bus8, z=complex(0, 0.48))
+    powerFlow.connectBuses(bus7, bus8, z=complex(0, 0.35))
+    powerFlow.connectBuses(bus7, bus11, z=complex(0, 0.10))
+    powerFlow.connectBuses(bus8, bus9, z=complex(0, 0.48))
+
+    powerFlow.solve(max_iterations=1000, max_error=100000000)
+    # print(powerFlow.yMatrix)
+
+
 def main():
     # class_example()
-    # example_14_buses()
-    four_bus_example()
+    example_14_buses()
+    # four_bus_example()
     # tap_tranformer_example()
+    # eleven_buses_task()
 
 
 if __name__ == "__main__":
