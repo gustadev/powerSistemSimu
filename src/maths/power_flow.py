@@ -204,8 +204,8 @@ class PowerFlow:
         bus2: Bus,
         y: complex | None = complex(0.0),
         z: complex | None = None,
-        bc: float = 0.0,  # TODO whe use it?
-        tap: complex = complex(1.0),  # TODO need to use it if there is PU?
+        bc: float = 0.0,
+        tap: complex = complex(1.0),
     ) -> None:
         bus1Index = self.buses.index(bus1)
         bus2Index = self.buses.index(bus2)

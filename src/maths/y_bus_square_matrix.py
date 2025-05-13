@@ -50,9 +50,9 @@ class YBusSquareMatrix:
         def mapper(r: int, c: int) -> complex:
             self.__bc[self.__getIndex(source, target)] = bc
             if r == c and r == source:
-                return self.__m[r][r] + y / tap + y * (tap - 1) / tap
+                return self.__m[r][r] + y / tap / tap
             elif r == c and r == target:
-                return self.__m[r][r] + y / tap + y * (1 - tap) / (tap * tap)
+                return self.__m[r][r] + y
             elif r == source and c == target:
                 return -y / tap
             elif r == target and c == source:
