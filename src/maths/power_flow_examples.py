@@ -363,6 +363,7 @@ def example_30_buses():
             name="Fieldale 132",
             v_ini=1.01,
             o_ini=-14.37 * degToRad,
+            generator=complex(0, 36.94),
             load=complex(94.2, 19),
         )
     )
@@ -388,7 +389,7 @@ def example_30_buses():
             v_sch=1.01,
             o_ini=-12.1 * degToRad,
             load=complex(30, 30),
-            generator=complex(37.3, 0),
+            generator=complex(0, 37.22),
         )
     )
     bus9 = powerFlow.add_bus(
@@ -405,8 +406,8 @@ def example_30_buses():
             v_ini=1.045,
             o_ini=-15.97 * degToRad,
             load=complex(5.8, 2),
-            generator=complex(0, 19),
-        )
+        ),
+        y=complex(0, 0.019),
     )
     bus11 = powerFlow.add_bus(
         PVBus(
@@ -520,8 +521,8 @@ def example_30_buses():
             v_ini=1.021,
             o_ini=-16.78 * degToRad,
             load=complex(8.7, 6.7),
-            generator=complex(0, 4.3),
-        )
+        ),
+        y=complex(0, 0.043),
     )
     bus25 = powerFlow.add_bus(
         PQBus(
@@ -574,45 +575,46 @@ def example_30_buses():
     powerFlow.connectBuses(bus1, bus2, z=complex(0.0192, 0.0575), bc=0.0528)
     powerFlow.connectBuses(bus1, bus3, z=complex(0.0452, 0.1652), bc=0.0408)
     powerFlow.connectBuses(bus2, bus4, z=complex(0.0570, 0.1737), bc=0.0368)
-    powerFlow.connectBuses(bus3, bus4, z=complex(0.0132, 0.0379), bc=0.0084)
     powerFlow.connectBuses(bus2, bus5, z=complex(0.0472, 0.1983), bc=0.0418)
     powerFlow.connectBuses(bus2, bus6, z=complex(0.0581, 0.1763), bc=0.0374)
+    powerFlow.connectBuses(bus3, bus4, z=complex(0.0132, 0.0379), bc=0.0084)
     powerFlow.connectBuses(bus4, bus6, z=complex(0.0119, 0.0414), bc=0.0090)
-    powerFlow.connectBuses(bus4, bus12, z=complex(0, 0.25), tap=0.932)
-    powerFlow.connectBuses(bus5, bus7, z=complex(0.0460, 0.1160), bc=0.0204)
-    powerFlow.connectBuses(bus6, bus7, z=complex(0.0267, 0.0820), bc=0.0170)
-    powerFlow.connectBuses(bus6, bus8, z=complex(0.0120, 0.0420), bc=0.0090)
-    powerFlow.connectBuses(bus6, bus9, z=complex(0, 0.208))
-    powerFlow.connectBuses(bus6, bus10, z=complex(0, 0.556))
-    powerFlow.connectBuses(bus9, bus11, z=complex(0, 0.208))
-    powerFlow.connectBuses(bus9, bus10, z=complex(0, 0.11))
-    powerFlow.connectBuses(bus4, bus12, z=complex(0, 0.256))
-    powerFlow.connectBuses(bus12, bus13, z=complex(0, 0.14))
+    powerFlow.connectBuses(bus4, bus12, z=complex(0.0, 0.256), tap=0.932)
+    powerFlow.connectBuses(bus5, bus7, z=complex(0.0460, 0.116), bc=0.0204)
+    powerFlow.connectBuses(bus6, bus7, z=complex(0.0267, 0.082), bc=0.017)
+    powerFlow.connectBuses(bus6, bus8, z=complex(0.0120, 0.042), bc=0.009)
+    powerFlow.connectBuses(bus6, bus9, z=complex(0.0, 0.208), tap=0.978)
+    powerFlow.connectBuses(bus6, bus10, z=complex(0.0, 0.556), tap=0.969)
+    powerFlow.connectBuses(bus6, bus28, z=complex(0.0169, 0.0599), bc=0.013)
+    powerFlow.connectBuses(bus8, bus28, z=complex(0.0636, 0.2), bc=0.0428)
+    powerFlow.connectBuses(bus9, bus10, z=complex(0.0, 0.110))
+    powerFlow.connectBuses(bus9, bus11, z=complex(0.0, 0.208))
+    powerFlow.connectBuses(bus10, bus17, z=complex(0.0324, 0.0845))
+    powerFlow.connectBuses(bus10, bus20, z=complex(0.0936, 0.209))
+    powerFlow.connectBuses(bus10, bus21, z=complex(0.0348, 0.0749))
+    powerFlow.connectBuses(bus10, bus22, z=complex(0.0727, 0.1499))
+    powerFlow.connectBuses(bus12, bus13, z=complex(0.0, 0.14))
     powerFlow.connectBuses(bus12, bus14, z=complex(0.1231, 0.2559))
     powerFlow.connectBuses(bus12, bus15, z=complex(0.0662, 0.1304))
     powerFlow.connectBuses(bus12, bus16, z=complex(0.0945, 0.1987))
-    powerFlow.connectBuses(bus14, bus15, z=complex(0.2210, 0.1997))
-    powerFlow.connectBuses(bus16, bus17, z=complex(0.0524, 0.1923))
+    powerFlow.connectBuses(bus14, bus15, z=complex(0.221, 0.1997))
     powerFlow.connectBuses(bus15, bus18, z=complex(0.1073, 0.2185))
+    powerFlow.connectBuses(bus15, bus23, z=complex(0.1, 0.202))
+    powerFlow.connectBuses(bus16, bus17, z=complex(0.0524, 0.1923))
     powerFlow.connectBuses(bus18, bus19, z=complex(0.0639, 0.1292))
-    powerFlow.connectBuses(bus19, bus20, z=complex(0.0340, 0.0680))
-    powerFlow.connectBuses(bus10, bus20, z=complex(0.0936, 0.2090))
-    powerFlow.connectBuses(bus10, bus17, z=complex(0.0324, 0.0845))
-    powerFlow.connectBuses(bus10, bus21, z=complex(0.0348, 0.0749))
-    powerFlow.connectBuses(bus10, bus22, z=complex(0.0727, 0.1499))
+    powerFlow.connectBuses(bus19, bus20, z=complex(0.034, 0.068))
     powerFlow.connectBuses(bus21, bus22, z=complex(0.0116, 0.0236))
-    powerFlow.connectBuses(bus15, bus23, z=complex(0.1000, 0.2020))
-    powerFlow.connectBuses(bus22, bus24, z=complex(0.1150, 0.1790))
-    powerFlow.connectBuses(bus23, bus24, z=complex(0.1320, 0.2700))
+    powerFlow.connectBuses(bus22, bus24, z=complex(0.115, 0.179))
+    powerFlow.connectBuses(bus23, bus24, z=complex(0.132, 0.27))
     powerFlow.connectBuses(bus24, bus25, z=complex(0.1885, 0.3292))
-    powerFlow.connectBuses(bus25, bus26, z=complex(0.2544, 0.3800))
+    powerFlow.connectBuses(bus25, bus26, z=complex(0.2544, 0.38))
     powerFlow.connectBuses(bus25, bus27, z=complex(0.1093, 0.2087))
     powerFlow.connectBuses(bus27, bus29, z=complex(0.2198, 0.4153))
     powerFlow.connectBuses(bus27, bus30, z=complex(0.3202, 0.6027))
-    powerFlow.connectBuses(bus28, bus27, z=complex(0, 0.396), tap=0.968)
+    powerFlow.connectBuses(bus28, bus27, z=complex(0.0, 0.396), tap=0.968)
     powerFlow.connectBuses(bus29, bus30, z=complex(0.2399, 0.4533))
 
-    powerFlow.solve()
+    powerFlow.solve(max_iterations=1000, max_error=1000000000)
 
 
 def main():
