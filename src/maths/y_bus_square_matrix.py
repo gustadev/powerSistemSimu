@@ -5,6 +5,17 @@ class YBusSquareMatrix:
     def __init__(self, log_print: bool = False):
         self.__m: BusSquareMatrix = BusSquareMatrix()
         self.__log_print: bool = log_print
+        self.__bc: dict[str, float] = {}
+
+    def __getIndex(self, i: int, j: int) -> str:
+        if i > j:
+            return f"{i}_{j}"
+        else:
+            return f"{j}_{i}"
+
+    def getBc(self, i: int, j: int) -> float:
+        index = self.__getIndex(i, j)
+        return self.__bc[index] if index in self.__bc else 0.0
 
     # Caso 1 - Adicionar um barramento e conecta a terra. Aumenta a ordem da matriz.
     def add_bus(self, y: complex) -> int:
@@ -35,19 +46,17 @@ class YBusSquareMatrix:
             print(
                 f"Case 4: connecting bus {source+1} to bus {target+1}, with y = {y}, tap={tap}:1, bc={bc}\n"
             )
-            # TODO handle bc
+
         def mapper(r: int, c: int) -> complex:
-            _y = y
+            self.__bc[self.__getIndex(source, target)] = bc
             if r == c and r == source:
-                # _y = y + bc
-                return self.__m[r][r] + _y / tap + _y * (tap - 1) / tap
+                return self.__m[r][r] + y / tap + y * (tap - 1) / tap
             elif r == c and r == target:
-                # _y = y + bc
-                return self.__m[r][r] + _y / tap + _y * (1 - tap) / (tap * tap)
+                return self.__m[r][r] + y / tap + y * (1 - tap) / (tap * tap)
             elif r == source and c == target:
-                return -_y / tap
+                return -y / tap
             elif r == target and c == source:
-                return -_y / tap
+                return -y / tap
             else:
                 return self.__m[r][c]
 

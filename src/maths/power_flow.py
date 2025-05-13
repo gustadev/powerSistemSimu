@@ -48,6 +48,7 @@ class Bus:
             y = abs(Y.y_matrix[self.index][bus.index])
             theta = cmath.phase(Y.y_matrix[self.index][bus.index])
             sum += self.v * bus.v * y * sin(theta - self.o + bus.o)
+            sum += self.v * self.v * Y.getBc(self.index, bus.index)  # TODO can improve it more?!
         return -sum
 
     @staticmethod

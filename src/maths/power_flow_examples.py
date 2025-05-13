@@ -183,7 +183,7 @@ def example_14_buses():
         )
         v_err += (bus.v - final_v[i]) ** 2
         o_err += (bus.o * 180 / pi - final_o[i]) ** 2
-    print(f"Total error: {sqrt(v_err + o_err).real:+8.4f}∠{(sqrt(o_err)).real:+7.4f}°")
+    print(f"Total error: {sqrt(v_err).real:+8.4f}∠{(sqrt(o_err)).real:+7.4f}°")
 
 
 # Source: https://lmsspada.kemdiktisaintek.go.id/pluginfile.php/18101/mod_resource/content/2/Load-Flow%20dengan%20Gauss%20Seidel%20dan%20Newton%20Raphson.pdf
