@@ -18,6 +18,13 @@
           "request": "launch",
           "program": "${workspaceFolder}/src/main.py",
           "console": "integratedTerminal"
+        },
+        {
+            "name": "Python Debugger: Power flow examples",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/maths/power_flow_examples.py",
+            "console": "integratedTerminal"
         }
     ]
 }
