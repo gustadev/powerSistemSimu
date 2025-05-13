@@ -121,6 +121,9 @@ class Bus:
         b = Y.y_matrix[i][i].imag
         return -bus.v * b + bus.calcQ(buses, Y) / bus.v
 
+    def __str__(self) -> str:
+        return f"#{self.index:2d} | {self.name:12s} | V: {self.v:+4.3f}∠ {(self.o*180/cmath.pi):+5.2f}° | P: {self.p:+4.2f} | Q: {self.q:+4.2f}"
+
 
 class PQBus(Bus):
     def __init__(
@@ -139,9 +142,6 @@ class PQBus(Bus):
         self.v_ini = v_ini
         self.o_ini = o_ini
 
-    def __str__(self) -> str:
-        return f"#{self.index:2d} | {self.name:12s} | V: {self.v:+4.6f}∠ {(self.o*180/cmath.pi):+4.6f}° | P: {self.p:+4.6f} | Q: {self.q:+4.6f}"
-
 
 class PVBus(Bus):  #
     def __init__(
@@ -158,9 +158,6 @@ class PVBus(Bus):  #
         self.p_sch = p
         self.o_ini = o_ini
 
-    def __str__(self) -> str:
-        return f"#{self.index:2d} | {self.name:12s} | V: {self.v:+4.6f}∠ {(self.o*180/cmath.pi):+4.6f}° | P: {self.p:+4.6f} | Q: {self.q:+4.6f}"
-
 
 class SlackBus(Bus):  # knows delta
     def __init__(
@@ -172,9 +169,6 @@ class SlackBus(Bus):  # knows delta
         super().__init__(name=name, v=v_esp, o=o_esp, p=1, q=0)
         self.v_esp = v_esp
         self.o_esp = o_esp
-
-    def __str__(self) -> str:
-        return f"#{self.index:2d} | {self.name:12s} | V: {self.v:+4.6f}∠ {(self.o*180/cmath.pi):+4.6f}° | P: {self.p:+4.6f} | Q: {self.q:+4.6f}"
 
 
 class VariableIndex:
@@ -192,6 +186,7 @@ class PowerFlow:
         self.buses: list[Bus] = list[Bus]()
         self.yMatrix: YBusSquareMatrix = YBusSquareMatrix()
         self.indexes = list[VariableIndex]()
+        self.taps = dict[str, float]()
         self.base = base
 
     def add_bus(self, bus: Bus, y: complex | None = complex(0), z: complex | None = None) -> Bus:
@@ -217,8 +212,8 @@ class PowerFlow:
             self.__get_y_from_z_or_y(z, y),
             bus1Index,
             bus2Index,
-            0,  # bc
-            1,  # tap
+            bc,
+            tap,
         )
 
     # TODO include tap LT

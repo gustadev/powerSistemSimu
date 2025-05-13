@@ -35,16 +35,19 @@ class YBusSquareMatrix:
             print(
                 f"Case 4: connecting bus {source+1} to bus {target+1}, with y = {y}, tap={tap}:1, bc={bc}\n"
             )
-
+            # TODO handle bc
         def mapper(r: int, c: int) -> complex:
+            _y = y
             if r == c and r == source:
-                return self.__m[r][r] + y / tap + y * (tap - 1) / tap
+                # _y = y + bc
+                return self.__m[r][r] + _y / tap + _y * (tap - 1) / tap
             elif r == c and r == target:
-                return self.__m[r][r] + y / tap + y * (1 - tap) / (tap * tap)
+                # _y = y + bc
+                return self.__m[r][r] + _y / tap + _y * (1 - tap) / (tap * tap)
             elif r == source and c == target:
-                return -y / tap
+                return -_y / tap
             elif r == target and c == source:
-                return -y / tap
+                return -_y / tap
             else:
                 return self.__m[r][c]
 
