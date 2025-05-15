@@ -161,7 +161,6 @@ class SimulatorController:
         print(self.__network.generators)
         print(self.__network.loads)
         print(self.__network.links)
-        self.__network.export_to_csv_folder("Output_Data")
         
 
     def getElementNames(self, ids: list[str]) -> str:
