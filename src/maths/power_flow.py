@@ -2,174 +2,8 @@ import cmath
 from math import cos, sin
 from typing import Any, Callable
 import numpy
+from bus import Bus, BusType
 from y_bus_square_matrix import YBusSquareMatrix
-
-
-class Bus:
-    def __init__(
-        self,
-        name: str,
-        v: float = 1,
-        o: float = 0,
-        p: float = 1,
-        q: float = 0,
-        index: int = -1,
-    ):
-        self.name = name
-        self.v: float = v
-        self.o: float = o
-        self.p: float = p
-        self.q: float = q
-        self.index: int = index
-
-    # P_i = ∑ |Vi| |Vj| |Yij| cos(θij - δi + δj)
-    #       j
-    def calcP(
-        self,
-        buses: list["Bus"],
-        Y: YBusSquareMatrix,
-    ) -> float:
-        sum = 0
-        for bus in buses:
-            y = abs(Y.y_matrix[self.index][bus.index])
-            theta = cmath.phase(Y.y_matrix[self.index][bus.index])
-            sum += self.v * bus.v * y * cos(theta - self.o + bus.o)
-        return sum
-
-    # Q_i = - ∑ |Vi| |Vj| |Yij| sin(θij - δi + δj)
-    #         j
-    def calcQ(
-        self,
-        buses: list["Bus"],
-        Y: YBusSquareMatrix,
-    ) -> float:
-        sum = 0
-        for bus in buses:
-            y = abs(Y.y_matrix[self.index][bus.index])
-            theta = cmath.phase(Y.y_matrix[self.index][bus.index])
-            sum += self.v * bus.v * y * sin(theta - self.o + bus.o)
-            sum += self.v * self.v * Y.getBc(self.index, bus.index) / 2 # TODO is it really it?!
-        return -sum
-
-    @staticmethod
-    def dPdO(  # dPi/dOj
-        i: int,
-        j: int,
-        buses: list["Bus"],
-        Y: YBusSquareMatrix,
-    ) -> float:
-        if i != j:
-            bus_i = buses[i]
-            bus_j = buses[j]
-            y_ij = abs(Y.y_matrix[i][j])
-            theta_ij = cmath.phase(Y.y_matrix[i][j])
-            return -bus_i.v * bus_j.v * y_ij * sin(theta_ij - bus_i.o + bus_j.o)
-
-        bus = buses[i]
-        b = Y.y_matrix[i][i].imag
-        return -bus.v * bus.v * b - bus.calcQ(buses, Y)
-
-    @staticmethod
-    def dPdV(  # dPi/dOj
-        i: int,
-        j: int,
-        buses: list["Bus"],
-        Y: YBusSquareMatrix,
-    ) -> float:
-        if i != j:
-            bus_i = buses[i]
-            bus_j = buses[j]
-            y_ij = abs(Y.y_matrix[i][j])
-            theta_ij = cmath.phase(Y.y_matrix[i][j])
-            return bus_i.v * y_ij * cos(theta_ij - bus_i.o + bus_j.o)
-
-        bus = buses[i]
-        g = Y.y_matrix[i][i].real
-        return bus.v * g + bus.calcP(buses, Y) / bus.v
-
-    # precisa do y entre o derivado e o outro
-    def dQdO(  # dPi/dOj
-        i: int,
-        j: int,
-        buses: list["Bus"],
-        Y: YBusSquareMatrix,
-    ) -> float:
-        if i != j:
-            bus_i = buses[i]
-            bus_j = buses[j]
-            y_ij = abs(Y.y_matrix[i][j])
-            theta_ij = cmath.phase(Y.y_matrix[i][j])
-            return -bus_i.v * bus_j.v * y_ij * cos(theta_ij - bus_i.o + bus_j.o)
-
-        bus = buses[i]
-        g = Y.y_matrix[i][i].real
-        return -bus.v * bus.v * g + bus.calcP(buses, Y)
-
-    def dQdV(  # dPi/dOj
-        i: int,
-        j: int,
-        buses: list["Bus"],
-        Y: YBusSquareMatrix,
-    ) -> float:
-        if i != j:
-            bus_i = buses[i]
-            bus_j = buses[j]
-            y_ij = abs(Y.y_matrix[i][j])
-            theta_ij = cmath.phase(Y.y_matrix[i][j])
-            return -bus_i.v * y_ij * sin(theta_ij - bus_i.o + bus_j.o)
-
-        bus = buses[i]
-        b = Y.y_matrix[i][i].imag
-        return -bus.v * b + bus.calcQ(buses, Y) / bus.v
-
-    def __str__(self) -> str:
-        return f"#{self.index:2d} | {self.name:12s} | V: {self.v:+4.3f}∠ {(self.o*180/cmath.pi):+5.2f}° | P: {self.p:+4.2f} | Q: {self.q:+4.2f}"
-
-
-class PQBus(Bus):
-    def __init__(
-        self,
-        name: str,
-        load: complex = complex(0),
-        generator: complex = complex(0),
-        v_ini: float = 1,
-        o_ini: float = 0,
-    ):
-        p: float = generator.real - load.real
-        q: float = generator.imag - load.imag
-        super().__init__(name=name, v=v_ini, o=o_ini, p=p, q=q)
-        self.p_sch = p
-        self.q_sch = q
-        self.v_ini = v_ini
-        self.o_ini = o_ini
-
-
-class PVBus(Bus):  #
-    def __init__(
-        self,
-        name: str,
-        v_sch: float = 1,
-        o_ini: float = 0,
-        generator: complex = complex(1),
-        load: complex = complex(0),
-    ):
-        p = generator.real - load.real
-        super().__init__(name=name, v=v_sch, o=o_ini, p=p, q=0)
-        self.v_sch = v_sch
-        self.p_sch = p
-        self.o_ini = o_ini
-
-
-class SlackBus(Bus):  # knows delta
-    def __init__(
-        self,
-        name: str,
-        v_esp: float = 1,
-        o_esp: float = 0,
-    ):
-        super().__init__(name=name, v=v_esp, o=o_esp, p=1, q=0)
-        self.v_esp = v_esp
-        self.o_esp = o_esp
 
 
 class VariableIndex:
@@ -233,9 +67,9 @@ class PowerFlow:
         s_sch: list[float] = list[float]()
         for namedIndex in self.indexes:
             bus = self.buses[namedIndex.index]
-            if namedIndex.variable == "o" and (isinstance(bus, PVBus) or isinstance(bus, PQBus)):
+            if namedIndex.variable == "o" and (bus.type == BusType.PV or bus.type == BusType.PQ):
                 s_sch.append(bus.p_sch)
-            elif namedIndex.variable == "v" and (isinstance(bus, PVBus) or isinstance(bus, PQBus)):
+            elif namedIndex.variable == "v" and (bus.type == BusType.PV or bus.type == BusType.PQ):
                 s_sch.append(bus.q_sch)
 
         for iteration in range(1, max_iterations + 1):
@@ -243,11 +77,11 @@ class PowerFlow:
 
             def getPowerResidues(busIndex: int, variable: str, power: str) -> float:
                 bus = self.buses[busIndex]
-                if power == "p" and (isinstance(bus, PQBus) or isinstance(bus, PVBus)):
+                if power == "p" and (bus.type == BusType.PV or bus.type == BusType.PQ):
                     p_cal = bus.calcP(self.buses, self.yMatrix)
                     p_sch = bus.p_sch / self.base  # TODO where more to update?
                     return p_sch - p_cal
-                elif power == "q" and (isinstance(bus, PQBus) or isinstance(bus, PVBus)):
+                elif power == "q" and (bus.type == BusType.PV or bus.type == BusType.PQ):
                     q_cal = bus.calcQ(self.buses, self.yMatrix)
                     q_sch = bus.q_sch / self.base  # TODO where more to update?
                     return q_sch - q_cal
@@ -321,10 +155,10 @@ class PowerFlow:
         v_indexes: list[VariableIndex] = list[VariableIndex]()
 
         for index, source in enumerate(self.buses):
-            if isinstance(source, PQBus):
+            if source.type is BusType.PQ:
                 o_indexes.append(VariableIndex(variable="o", power="p", busIndex=index))
                 v_indexes.append(VariableIndex(variable="v", power="q", busIndex=index))
-            if isinstance(source, PVBus):
+            if source.type is BusType.PV:
                 o_indexes.append(VariableIndex(variable="o", power="p", busIndex=index))
 
         self.indexes = o_indexes + v_indexes
