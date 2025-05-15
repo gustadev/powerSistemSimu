@@ -5,24 +5,11 @@ from enum import Enum
 
 
 class BusType(Enum):
-    SLACK = 2
-    PV = 1
+    SLACK = 3
+    PV = 2
     PQ = 0
 
 
-#   "number",
-#         "name",
-#         "type",
-#         "voltage",
-#         "angle",
-#         "p_load",
-#         "q_load",
-#         "p_gen",
-#         "q_gen",
-#         "v_rated",
-#         # "Desired volts (pu)",
-#         "q_max",
-#         "q_min",
 class Bus:
     def __init__(
         self,
@@ -37,6 +24,8 @@ class Bus:
         v_rated: float = 1,
         index: int = -1,  # to be used by power flow solver
     ):
+        self.v_sch: float = v
+        self.o_sch: float = o
         self.p_sch: float = (generator - load).real
         self.q_sch: float = (generator - load).imag
 
@@ -45,10 +34,10 @@ class Bus:
         self.o: float = o
         self.p: float = self.p_sch
         self.q: float = self.q_sch
-        self.load: complex = load if load != complex(0) else None
-        self.generator: complex = generator if generator != complex(0) else None
-        self.q_min: float = q_min
-        self.q_max: float = q_max
+        self.load: complex | None = load if load != complex(0) else None
+        self.generator: complex | None = generator if generator != complex(0) else None
+        self.q_min: float | None = q_min
+        self.q_max: float | None = q_max
         self.index: int = index
         self.type: BusType = type
         self.v_rated: float = v_rated
@@ -119,6 +108,7 @@ class Bus:
         return bus.v * g + bus.calcP(buses, Y) / bus.v
 
     # precisa do y entre o derivado e o outro
+    @staticmethod
     def dQdO(  # dPi/dOj
         i: int,
         j: int,
@@ -136,6 +126,7 @@ class Bus:
         g = Y.y_matrix[i][i].real
         return -bus.v * bus.v * g + bus.calcP(buses, Y)
 
+    @staticmethod
     def dQdV(  # dPi/dOj
         i: int,
         j: int,

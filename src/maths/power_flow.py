@@ -1,5 +1,4 @@
 import cmath
-from math import cos, sin
 from typing import Any, Callable
 import numpy
 from bus import Bus, BusType
@@ -24,7 +23,7 @@ class PowerFlow:
         self.taps = dict[str, float]()
         self.base = base
 
-    def add_bus(self, bus: Bus, y: complex | None = complex(0), z: complex | None = None) -> Bus:
+    def add_bus(self, bus: Bus, y: complex = complex(0), z: complex | None = None) -> Bus:
         self.buses.append(bus)
         self.yMatrix.add_bus(self.__get_y_from_z_or_y(z, y))
         self.__update_indexes()
@@ -36,7 +35,7 @@ class PowerFlow:
         self,
         bus1: Bus,
         bus2: Bus,
-        y: complex | None = complex(0.0),
+        y: complex = complex(0.0),
         z: complex | None = None,
         bc: float = 0.0,
         tap: complex = complex(1.0),
@@ -61,9 +60,7 @@ class PowerFlow:
         print("Solving power flow...")
 
         n: int = len(self.buses)
-        x: list[float] = [[0] for _ in range(n)]
         j: list[list[float]] = [[0 for _ in range(n)] for _ in range(n)]
-        s: list[float] = [[0] for _ in range(n)]
         s_sch: list[float] = list[float]()
         for namedIndex in self.indexes:
             bus = self.buses[namedIndex.index]
@@ -87,8 +84,8 @@ class PowerFlow:
                     return q_sch - q_cal
                 return 0
 
-            def getJacobianElement(r: int, c: int, __, ___, diff: str) -> float:
-                dSdX = None
+            def getJacobianElement(r: int, c: int, _: str, __: str, diff: str) -> float:
+                dSdX: Callable[[int, int, list[Bus], YBusSquareMatrix], float] = Bus.dPdO
                 if diff == "∂p/∂o":
                     dSdX = Bus.dPdO
                 elif diff == "∂p/∂v":
