@@ -3,10 +3,10 @@ import numpy as np
 from typing import Any, Tuple
 from bus import Bus, BusType
 from power_flow import PowerFlow
+import os
 
 
-def read_data_ieee_cdf(path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
-
+def __read_data_ieee_cdf(path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     lines = []
     with open(path, "+r") as f:
         lines = f.readlines()
@@ -112,7 +112,7 @@ def read_data_ieee_cdf(path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
         # parsed_row.append(
         #     str(raw_row[84:89]).strip()
         # )  # Columns 84-90   Transformer (phase shifter) final angle (F)
-        parsed_row.append(float(raw_row[90:97]))
+        parsed_row.append(float(raw_row[77:82]))
         # )  # Columns 91-97   Minimum tap or phase shift (F)
         # parsed_row.append(
         #     str(raw_row[97:104]).strip()
@@ -155,44 +155,77 @@ def read_data_ieee_cdf(path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     return buses, lines
 
 
-if __name__ == "__main__":
-    buses, lines = read_data_ieee_cdf(
-        "/Users/sthefano/dev-school/powerSistemSimu/src/maths/data/14_Barras/ieee14cdf.txt"
-    )
-    print(buses.info())
-    print(lines.info())
-    powerFlow = PowerFlow(100)
+def read_power_flow_from_ieee(path: str, base_mw: int = 100) -> PowerFlow:
+    buses, lines = __read_data_ieee_cdf(path)
+    powerFlow = PowerFlow(base_mw)
     for _, row in buses.iterrows():
+        name: str = str(row["name"])  # type: ignore
+        v: float = float(row["voltage"])  # type: ignore
+        o: float = float(row["angle"]) * np.pi / 180  # type: ignore
+        load: complex = complex(row["p_load"], row["q_load"])  # type: ignore
+        generator: complex = complex(row["p_gen"], row["q_gen"])  # type: ignore
+        q_min: float = float(row["q_min"])  # type: ignore
+        q_max: float = float(row["q_max"])  # type: ignore
+        bus_type: BusType = BusType(row["type"])  # type: ignore
+        v_rated: float = float(row["v_rated"])  # type: ignore
+        shunt: complex = complex(row["shunt_g"], row["shunt_b"])  # type: ignore
+
         powerFlow.add_bus(
             Bus(
-                name=row["name"],
-                v=row["voltage"],
-                o=row["angle"] * np.pi / 180,
-                load=complex(row["p_load"], row["q_load"]),
-                generator=complex(row["p_gen"], row["q_gen"]),
-                q_min=row["q_min"],
-                q_max=row["q_max"],
-                type=BusType(row["type"]),
-                v_rated=row["v_rated"],
+                name=name,
+                v=v,
+                o=o,
+                load=load,
+                generator=generator,
+                q_min=q_min if q_min != 0 else None,
+                q_max=q_max if q_max != 0 else None,
+                type=bus_type,
+                v_rated=v_rated,
             ),
-            y=complex(row["shunt_g"], row["shunt_b"]),
+            y=shunt,
         )
 
     for _, row in lines.iterrows():
+        tapBus: Bus = powerFlow.buses[int(row["tap_bus"]) - 1]
+        zBus: Bus = powerFlow.buses[int(row["z_bus"]) - 1]
+        bc: float = float(row["b"])
+        z: complex = complex(float(row["r"]), float(row["x"]))
+        tap: complex = complex(float(row["tap"])) if float(row["tap"]) != 0 else complex(1.0)
 
-        powerFlow.connectBuses(
-            # powerFlow.buses[int(row["z_bus"]) - 1],
-            powerFlow.buses[int(row["tap_bus"]) - 1],
-            powerFlow.buses[int(row["z_bus"]) - 1],
-            z=complex(row["r"], row["x"]),
-            bc=row["b"],
-            tap=complex(row["tap"]) if row["tap"] != 0 else complex(1.0),
-        )
+        powerFlow.connectBuses(tapBus, zBus, z=z, bc=bc, tap=tap)
 
-    powerFlow.solve(max_iterations=100)
+    return powerFlow
+
+
+def __test_14_bus():
+    script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
+    rel_path = "data/ieee14cdf.txt"
+    abs_file_path = os.path.join(script_dir, rel_path)
+    power_flow = read_power_flow_from_ieee(abs_file_path)
+
+    # fmt:off
+    final_v : list[float] = [1.06, 1.045, 1.01, 1.01767085369177, 1.01951385981906, 1.07, 1.06151953249094, 1.09, 1.05593172063697, 1.05098462499985, 1.05690651854037, 1.05518856319710, 1.05038171362860, 1.03552994585357]
+    final_o : list[float] = [0.0, -4.98258914197497, -12.7250999382679, -10.3129010923315, -8.77385389829527, -14.2209464637019, -13.3596273653462, -13.3596273653462, -14.9385212952289, -15.0972884630709, -14.7906220313214, -15.0755845204241, -15.1562763362218, -16.0336445292053]
+    # fmt:on
+    # for i, bus in enumerate(power_flow.buses):
+    #     bus.v = final_v[i]
+    #     bus.o = final_o[i] / 180 * np.pi
+
+    # power_flow.solve(max_iterations=100)
 
     print("Diff:")
-    for bus in powerFlow.buses:
-        print(
-            f"delta V{bus.index:3d}= {abs(bus.v-bus.v_sch):10.4f}pu  o={abs((bus.o-bus.o_sch)*180/np.pi):8.4f}°"
-        )
+    v_sum = 0
+    o_sum = 0
+
+    for index, bus in enumerate(power_flow.buses):
+        v_err: float = abs(bus.v - final_v[index])
+        o_err: float = abs((bus.o - final_o[index] / 180 * np.pi))
+        v_sum += v_err
+        o_sum += o_err
+        print(f"delta V{bus.index:3d}= {v_err:10.4f}pu  o={(o_err*180/np.pi):8.4f}°")
+    print(f"V_sum = {v_sum:.10f}  delta_sum = {(o_sum*180/np.pi):8.4f}")
+    # V_sum = 0.0035132208  delta_sum =   0.0631 diff if values dont change
+
+
+if __name__ == "__main__":
+    __test_14_bus()
