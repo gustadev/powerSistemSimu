@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from typing import Any, Tuple
 from bus import Bus, BusType
+from connection import BusConnection
 from power_flow import PowerFlow
 import os
 
@@ -158,7 +159,7 @@ def __read_data_ieee_cdf(path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
 def read_power_flow_from_ieee(path: str, base_mw: int = 100) -> PowerFlow:
     buses, lines = __read_data_ieee_cdf(path)
     powerFlow = PowerFlow(base_mw)
-    for _, row in buses.iterrows():
+    for _, row in buses.iterrows():  # type: ignore
         name: str = str(row["name"])  # type: ignore
         v: float = float(row["voltage"])  # type: ignore
         o: float = float(row["angle"]) * np.pi / 180  # type: ignore
@@ -170,29 +171,33 @@ def read_power_flow_from_ieee(path: str, base_mw: int = 100) -> PowerFlow:
         v_rated: float = float(row["v_rated"])  # type: ignore
         shunt: complex = complex(row["shunt_g"], row["shunt_b"])  # type: ignore
 
-        powerFlow.add_bus(
-            Bus(
-                name=name,
-                v=v,
-                o=o,
-                load=load,
-                generator=generator,
-                q_min=q_min if q_min != 0 else None,
-                q_max=q_max if q_max != 0 else None,
-                type=bus_type,
-                v_rated=v_rated,
-            ),
-            y=shunt,
+        bus: Bus = Bus(
+            name=name,
+            v=v,
+            o=o,
+            load=load,
+            generator=generator,
+            q_min=q_min if q_min != 0 else None,
+            q_max=q_max if q_max != 0 else None,
+            type=bus_type,
+            v_rated=v_rated,
+            shunt=shunt,
         )
 
-    for _, row in lines.iterrows():
-        tapBus: Bus = powerFlow.buses[int(row["tap_bus"]) - 1]
-        zBus: Bus = powerFlow.buses[int(row["z_bus"]) - 1]
-        bc: float = float(row["b"])
-        z: complex = complex(float(row["r"]), float(row["x"]))
-        tap: complex = complex(float(row["tap"])) if float(row["tap"]) != 0 else complex(1.0)
+        powerFlow.add_bus(bus)
 
-        powerFlow.connectBuses(tapBus, zBus, z=z, bc=bc, tap=tap)
+    for _, row in lines.iterrows():  # type: ignore
+        tapBus: int = int(row["tap_bus"]) - 1  # type: ignore
+        zBus: int = int(row["z_bus"]) - 1  # type: ignore
+        bc: float = float(row["b"])  # type: ignore
+        z: complex = complex(float(row["r"]), float(row["x"]))  # type: ignore
+        tap: complex = complex(float(row["tap"])) if float(row["tap"]) != 0 else complex(1.0)  # type: ignore
+
+        connection: BusConnection = BusConnection(
+            powerFlow.buses[tapBus], powerFlow.buses[zBus], z=z, bc=bc, tap=tap
+        )
+
+        powerFlow.add_connection(connection)
 
     return powerFlow
 
@@ -211,11 +216,11 @@ def __test_14_bus():
     #     bus.v = final_v[i]
     #     bus.o = final_o[i] / 180 * np.pi
 
-    # power_flow.solve(max_iterations=100)
+    power_flow.solve(max_iterations=100)
 
     print("Diff:")
-    v_sum = 0
-    o_sum = 0
+    v_sum: float = 0
+    o_sum: float = 0
 
     for index, bus in enumerate(power_flow.buses):
         v_err: float = abs(bus.v - final_v[index])
