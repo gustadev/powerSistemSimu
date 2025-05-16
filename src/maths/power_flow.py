@@ -2,6 +2,7 @@ import cmath
 from typing import Any, Callable
 import numpy
 from bus import Bus, BusType
+from connection import BusConnection
 from y_bus_square_matrix import YBusSquareMatrix
 
 
@@ -18,46 +19,39 @@ class VariableIndex:
 class PowerFlow:
     def __init__(self, base: float = 1):
         self.buses: list[Bus] = list[Bus]()
-        self.yMatrix: YBusSquareMatrix = YBusSquareMatrix()
+        self.connections: list[BusConnection] = list[BusConnection]()
+        self.__yMatrix: YBusSquareMatrix = YBusSquareMatrix()
         self.indexes = list[VariableIndex]()
-        self.taps = dict[str, float]()
         self.base = base
 
-    def add_bus(self, bus: Bus, y: complex = complex(0), z: complex | None = None) -> Bus:
+    def add_bus(self, bus: Bus) -> Bus:
         self.buses.append(bus)
-        self.yMatrix.add_bus(self.__get_y_from_z_or_y(z, y))
-        self.__update_indexes()
         bus.index = len(self.buses) - 1
         return bus
 
-    # tap on bus2
-    def connectBuses(
-        self,
-        bus1: Bus,
-        bus2: Bus,
-        y: complex = complex(0.0),
-        z: complex | None = None,
-        bc: float = 0.0,
-        tap: complex = complex(1.0),
-    ) -> None:
-        bus1Index = self.buses.index(bus1)
-        bus2Index = self.buses.index(bus2)
-        self.yMatrix.connect_bus_to_bus(
-            self.__get_y_from_z_or_y(z, y),
-            bus1Index,
-            bus2Index,
-            bc,
-            tap,
-        )
+    def add_connection(self, connection: BusConnection) -> None:
+        self.connections.append(connection)
 
-    # TODO include tap LT
-    def __get_y_from_z_or_y(self, z: complex | None, y: complex) -> complex:
-        if z is not None:
-            return 1 / z + y
-        return y
+    def build_bus_matrix(self) -> YBusSquareMatrix:
+        bus_matrix: YBusSquareMatrix = YBusSquareMatrix()
+
+        for bus in self.buses:
+            bus_matrix.add_bus(bus.shunt)
+
+        for connection in self.connections:
+            bus_matrix.connect_bus_to_bus(
+                y=connection.y,
+                source=connection.tap_bus,
+                target=connection.z_bus,
+                bc=connection.bc,
+                tap=connection.tap,
+            )
+        return bus_matrix
 
     def solve(self, max_iterations: int = 10, max_error: float = 100.0) -> None:
         print("Solving power flow...")
+        self.__yMatrix = self.build_bus_matrix()
+        self.__update_indexes()
 
         n: int = len(self.buses)
         j: list[list[float]] = [[0 for _ in range(n)] for _ in range(n)]
@@ -75,11 +69,11 @@ class PowerFlow:
             def getPowerResidues(busIndex: int, variable: str, power: str) -> float:
                 bus = self.buses[busIndex]
                 if power == "p" and (bus.type == BusType.PV or bus.type == BusType.PQ):
-                    p_cal = bus.calcP(self.buses, self.yMatrix)
+                    p_cal = bus.calcP(self.buses, self.__yMatrix)
                     p_sch = bus.p_sch / self.base  # TODO where more to update?
                     return p_sch - p_cal
                 elif power == "q" and (bus.type == BusType.PV or bus.type == BusType.PQ):
-                    q_cal = bus.calcQ(self.buses, self.yMatrix)
+                    q_cal = bus.calcQ(self.buses, self.__yMatrix)
                     q_sch = bus.q_sch / self.base  # TODO where more to update?
                     return q_sch - q_cal
                 return 0
@@ -94,7 +88,7 @@ class PowerFlow:
                     dSdX = Bus.dQdO
                 else:
                     dSdX = Bus.dQdV
-                return dSdX(i=r, j=c, buses=self.buses, Y=self.yMatrix)
+                return dSdX(i=r, j=c, buses=self.buses, Y=self.__yMatrix)
 
             ds = self.__map_indexes_list(getPowerResidues)
             j = self.__map_indexes_matrix(getJacobianElement)
@@ -136,8 +130,8 @@ class PowerFlow:
 
         print("\nPower flow solved.")
         for bus in self.buses:
-            bus.p = bus.calcP(self.buses, self.yMatrix)
-            bus.q = bus.calcQ(self.buses, self.yMatrix)
+            bus.p = bus.calcP(self.buses, self.__yMatrix)
+            bus.q = bus.calcQ(self.buses, self.__yMatrix)
             print(bus)
 
     def print_state(self):

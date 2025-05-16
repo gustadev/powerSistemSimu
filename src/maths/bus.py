@@ -23,6 +23,7 @@ class Bus:
         type: BusType = BusType.PQ,
         v_rated: float = 1,
         index: int = -1,  # to be used by power flow solver
+        shunt: complex = complex(0),
     ):
         self.v_sch: float = v
         self.o_sch: float = o
@@ -41,6 +42,7 @@ class Bus:
         self.index: int = index
         self.type: BusType = type
         self.v_rated: float = v_rated
+        self.shunt: complex = shunt
 
     # P_i = ∑ |Vi| |Vj| |Yij| cos(θij - δi + δj)
     #       j

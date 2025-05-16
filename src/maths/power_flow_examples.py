@@ -1,5 +1,6 @@
 from cmath import pi, sqrt
 from bus import Bus, BusType
+from connection import BusConnection
 from power_flow import PowerFlow
 
 degToRad: float = pi / 180
@@ -9,26 +10,16 @@ degToRad: float = pi / 180
 def class_example():
     # 1pu = 100MW
     powerFlow = PowerFlow()
-    bus1 = powerFlow.add_bus(
-        Bus(name="Slack Bus", v=1.05, type=BusType.SLACK),
-    )
-    bus2 = powerFlow.add_bus(
-        Bus(name="Load", load=complex(4, 2.5), type=BusType.PQ),
-    )
-    bus3 = powerFlow.add_bus(
-        Bus(
-            name="Generator",
-            v=1.04,
-            generator=complex(2),
-            type=BusType.PV,
-        )
-    )
+    bus1 = powerFlow.add_bus(Bus(name="Slack Bus", v=1.05, type=BusType.SLACK))
+    bus2 = powerFlow.add_bus(Bus(name="Load", load=complex(4, 2.5), type=BusType.PQ))
+    bus3 = powerFlow.add_bus(Bus(name="Generator", v=1.04, generator=complex(2), type=BusType.PV))
 
-    powerFlow.connectBuses(bus1, bus2, z=complex(0.02, 0.04))
-    powerFlow.connectBuses(bus2, bus3, z=complex(0.0125, 0.025))
-    powerFlow.connectBuses(bus3, bus1, z=complex(0.01, 0.03))
+    powerFlow.add_connection(BusConnection(bus1, bus2, z=complex(0.02, 0.04)))
+    powerFlow.add_connection(BusConnection(bus2, bus3, z=complex(0.0125, 0.025)))
+    powerFlow.add_connection(BusConnection(bus3, bus1, z=complex(0.01, 0.03)))
 
-    print(f"Y=\n{powerFlow.yMatrix}\n")
+    Y = powerFlow.build_bus_matrix()
+    print(f"Y=\n{Y.y_matrix}\n")
 
     powerFlow.solve()
 
@@ -125,8 +116,8 @@ def example_14_buses():
             o=-14.94 * degToRad,
             load=complex(29.5, 16.6),
             type=BusType.PQ,
+            shunt=complex(0, 0.19),
         ),
-        y=complex(0, 0.19),  # shunt -> complex(0, 19)
     )
     bus10 = powerFlow.add_bus(
         Bus(
@@ -174,26 +165,26 @@ def example_14_buses():
         ),
     )
 
-    powerFlow.connectBuses(bus1, bus2, z=complex(0.01938, 0.05917), bc=0.0528)
-    powerFlow.connectBuses(bus1, bus5, z=complex(0.05403, 0.22304), bc=0.0492)
-    powerFlow.connectBuses(bus2, bus3, z=complex(0.04699, 0.19797), bc=0.0438)
-    powerFlow.connectBuses(bus2, bus4, z=complex(0.05811, 0.17632), bc=0.034)
-    powerFlow.connectBuses(bus2, bus5, z=complex(0.05695, 0.17388), bc=0.0346)
-    powerFlow.connectBuses(bus3, bus4, z=complex(0.06701, 0.17103), bc=0.0128)
-    powerFlow.connectBuses(bus4, bus5, z=complex(0.01335, 0.04211))
-    powerFlow.connectBuses(bus4, bus7, z=complex(0, 0.20912), tap=0.978)
-    powerFlow.connectBuses(bus4, bus9, z=complex(0, 0.55618), tap=0.969)
-    powerFlow.connectBuses(bus5, bus6, z=complex(0, 0.25202), tap=0.932)
-    powerFlow.connectBuses(bus6, bus11, z=complex(0.09498, 0.1989))
-    powerFlow.connectBuses(bus6, bus12, z=complex(0.12291, 0.25581))
-    powerFlow.connectBuses(bus6, bus13, z=complex(0.06615, 0.13027))
-    powerFlow.connectBuses(bus7, bus8, z=complex(0, 0.17615))
-    powerFlow.connectBuses(bus7, bus9, z=complex(0, 0.11001))
-    powerFlow.connectBuses(bus9, bus10, z=complex(0.03181, 0.0845))
-    powerFlow.connectBuses(bus9, bus14, z=complex(0.12711, 0.27038))
-    powerFlow.connectBuses(bus10, bus11, z=complex(0.08205, 0.19207))
-    powerFlow.connectBuses(bus12, bus13, z=complex(0.22092, 0.19988))
-    powerFlow.connectBuses(bus13, bus14, z=complex(0.17093, 0.34802))
+    powerFlow.add_connection(BusConnection(bus1, bus2, z=complex(0.01938, 0.05917), bc=0.0528))
+    powerFlow.add_connection(BusConnection(bus1, bus5, z=complex(0.05403, 0.22304), bc=0.0492))
+    powerFlow.add_connection(BusConnection(bus2, bus3, z=complex(0.04699, 0.19797), bc=0.0438))
+    powerFlow.add_connection(BusConnection(bus2, bus4, z=complex(0.05811, 0.17632), bc=0.034))
+    powerFlow.add_connection(BusConnection(bus2, bus5, z=complex(0.05695, 0.17388), bc=0.0346))
+    powerFlow.add_connection(BusConnection(bus3, bus4, z=complex(0.06701, 0.17103), bc=0.0128))
+    powerFlow.add_connection(BusConnection(bus4, bus5, z=complex(0.01335, 0.04211)))
+    powerFlow.add_connection(BusConnection(bus4, bus7, z=complex(0, 0.20912), tap=0.978))
+    powerFlow.add_connection(BusConnection(bus4, bus9, z=complex(0, 0.55618), tap=0.969))
+    powerFlow.add_connection(BusConnection(bus5, bus6, z=complex(0, 0.25202), tap=0.932))
+    powerFlow.add_connection(BusConnection(bus6, bus11, z=complex(0.09498, 0.1989)))
+    powerFlow.add_connection(BusConnection(bus6, bus12, z=complex(0.12291, 0.25581)))
+    powerFlow.add_connection(BusConnection(bus6, bus13, z=complex(0.06615, 0.13027)))
+    powerFlow.add_connection(BusConnection(bus7, bus8, z=complex(0, 0.17615)))
+    powerFlow.add_connection(BusConnection(bus7, bus9, z=complex(0, 0.11001)))
+    powerFlow.add_connection(BusConnection(bus9, bus10, z=complex(0.03181, 0.0845)))
+    powerFlow.add_connection(BusConnection(bus9, bus14, z=complex(0.12711, 0.27038)))
+    powerFlow.add_connection(BusConnection(bus10, bus11, z=complex(0.08205, 0.19207)))
+    powerFlow.add_connection(BusConnection(bus12, bus13, z=complex(0.22092, 0.19988)))
+    powerFlow.add_connection(BusConnection(bus13, bus14, z=complex(0.17093, 0.34802)))
 
     powerFlow.solve(max_error=10000000, max_iterations=10)
     v_err = 0
@@ -204,7 +195,7 @@ def example_14_buses():
         )
         v_err += (bus.v - final_v[i]) ** 2
         o_err += (bus.o * 180 / pi - final_o[i]) ** 2
-    print(f"Total error: {sqrt(v_err).real:+8.4f}/_{(sqrt(o_err)).real:+7.4f}o")
+    print(f"Total error: {sqrt(v_err).real:+12.10f}/_{(sqrt(o_err)).real:+12.10f}o")
 
 
 # Source: https://lmsspada.kemdiktisaintek.go.id/pluginfile.php/18101/mod_resource/content/2/Load-Flow%20dengan%20Gauss%20Seidel%20dan%20Newton%20Raphson.pdf
@@ -217,15 +208,16 @@ def four_bus_example():
     bus3 = powerFlow.add_bus(Bus(name="Load 2", generator=complex(-1, 0.5), type=BusType.PQ))
     bus4 = powerFlow.add_bus(Bus(name="Load 3", generator=complex(-0.3, -0.1), type=BusType.PQ))
 
-    powerFlow.connectBuses(bus1, bus2, z=complex(0.05, 0.15))
-    powerFlow.connectBuses(bus1, bus3, z=complex(0.10, 0.30))
-    powerFlow.connectBuses(bus2, bus3, z=complex(0.15, 0.45))
-    powerFlow.connectBuses(bus2, bus4, z=complex(0.10, 0.30))
-    powerFlow.connectBuses(bus3, bus4, z=complex(0.05, 0.15))
+    powerFlow.add_connection(BusConnection(bus1, bus2, z=complex(0.05, 0.15)))
+    powerFlow.add_connection(BusConnection(bus1, bus3, z=complex(0.10, 0.30)))
+    powerFlow.add_connection(BusConnection(bus2, bus3, z=complex(0.15, 0.45)))
+    powerFlow.add_connection(BusConnection(bus2, bus4, z=complex(0.10, 0.30)))
+    powerFlow.add_connection(BusConnection(bus3, bus4, z=complex(0.05, 0.15)))
 
-    print(f"Y=\n{powerFlow.yMatrix}\n")
+    y_matrix = powerFlow.build_bus_matrix().y_matrix
+    print(f"Y=\n{y_matrix}\n")
 
-    ref_y = [
+    ref_y: list[list[complex]] = [
         [3.0 - 9j, -2.0 + 6j, -1.0 + 3j, 0],
         [-2.0 + 6j, 3.666 - 11j, -0.666 + 2j, -1.0 + 3j],
         [-1.0 + 3j, -0.666 + 2j, 3.666 - 11j, -2.0 + 6j],
@@ -235,7 +227,7 @@ def four_bus_example():
     print("Differences for each element of the Y matrix:")
     for i in range(len(ref_y)):
         for j in range(len(ref_y[i])):
-            diff = abs(ref_y[i][j] - powerFlow.yMatrix.y_matrix[i][j])
+            diff = abs(ref_y[i][j] - y_matrix[i][j])
             print(f"Y[{i}][{j}] = {diff:.4f}")
 
     powerFlow.solve(max_iterations=10)
@@ -248,16 +240,17 @@ def tap_tranformer_example():
     bus3 = pf.add_bus(Bus(name="C"))
     bus4 = pf.add_bus(Bus(name="D"))
 
-    def parallel(z1, z2):
+    def parallel(z1: complex, z2: complex) -> complex:
         return 1 / (1 / z1 + 1 / z2)
 
-    pf.connectBuses(bus1, bus3, z=complex(0, 0.0125), tap=0.8)
-    pf.connectBuses(bus4, bus2, z=complex(0, 0.16), tap=1.25)
-    pf.connectBuses(bus4, bus3, z=parallel(complex(0, 0.25), complex(0, 0.2)))
+    pf.add_connection(BusConnection(bus1, bus3, z=complex(0, 0.0125), tap=0.8))
+    pf.add_connection(BusConnection(bus4, bus2, z=complex(0, 0.16), tap=1.25))
+    pf.add_connection(BusConnection(bus4, bus3, z=parallel(complex(0, 0.25), complex(0, 0.2))))
 
-    print(pf.yMatrix)
+    y_matrix = pf.build_bus_matrix().y_matrix
+    print(y_matrix)
 
-    ref_y = [
+    ref_y: list[list[complex]] = [
         [-1j * 125, 0, 1j * 100, 0],
         [0, -1j * 6.25, 0, 1j * 5],
         [1j * 100, 0, -1j * 89, 1j * 9],
@@ -267,7 +260,7 @@ def tap_tranformer_example():
     print("Differences for each element of the Y matrix:")
     for i in range(len(ref_y)):
         for j in range(len(ref_y[i])):
-            diff = abs(ref_y[i][j] - pf.yMatrix.y_matrix[i][j])
+            diff = abs(ref_y[i][j] - y_matrix[i][j])
             print(f"Y[{i}][{j}] = {diff:.4f}")
 
 
