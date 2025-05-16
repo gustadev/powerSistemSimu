@@ -222,7 +222,7 @@ def __test_14_bus():
         o_err: float = abs((bus.o - final_o[index] / 180 * np.pi))
         v_sum += v_err
         o_sum += o_err
-        print(f"delta V{bus.index:3d}= {v_err:10.4f}pu  o={(o_err*180/np.pi):8.4f}°")
+        print(f"delta V{bus.index:3d}= {v_err:10.4f}pu  o={(o_err*180/np.pi):8.4f}o")
     print(f"V_sum = {v_sum:.10f}  delta_sum = {(o_sum*180/np.pi):8.4f}")
     # V_sum = 0.0035132208  delta_sum =   0.0631 diff if values dont change
 

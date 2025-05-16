@@ -145,4 +145,4 @@ class Bus:
         return -bus.v * b + bus.calcQ(buses, Y) / bus.v
 
     def __str__(self) -> str:
-        return f"#{self.index:2d} | {self.name:12s} | V: {self.v:+4.3f}∠ {(self.o*180/cmath.pi):+5.2f}° | P: {self.p:+4.2f} | Q: {self.q:+4.2f}"
+        return f"#{self.index:2d} | {self.name:12s} | V: {self.v:+4.3f}/_ {(self.o*180/cmath.pi):+5.2f}o | P: {self.p:+4.2f} | Q: {self.q:+4.2f}"
