@@ -147,4 +147,15 @@ class Bus:
         return -bus.v * b + bus.calcQ(buses, Y) / bus.v
 
     def __str__(self) -> str:
-        return f"#{self.index:2d} | {self.name:12s} | V: {self.v:+4.3f}/_ {(self.o*180/cmath.pi):+5.2f}o | P: {self.p:+4.2f} | Q: {self.q:+4.2f}"
+        q_min: str = "        "
+        if self.q_min:
+            q_min = f"{self.q_min:+8.2f}"
+        q_max: str = "        "
+        if self.q_max:
+            q_max = f"{self.q_max:+8.2f}"
+        return (
+            f"#{self.index:3d} | Type: {self.type.value} | V: {self.v:+4.3f}/_ {(self.o*180/cmath.pi):+8.4f}o |"
+            + f" P: {self.p:+8.2f} | Q: {self.q:+8.2f} |"
+            + f" P_sch: {self.p_sch:+8.2f} | Q_sch: {self.q_sch:+8.2f} |"
+            + f" Q_min: {q_min} | Q_max: {q_max} | shunt: {self.shunt.real:+4.2f}  {self.shunt.imag:+4.2f}j |"
+        )
