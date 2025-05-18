@@ -1,9 +1,10 @@
 import cmath
 from typing import Any, Callable
 import numpy
-from bus import Bus, BusType
-from connection import BusConnection
-from y_bus_square_matrix import YBusSquareMatrix
+
+from maths.connection import BusConnection
+from maths.bus import Bus, BusType
+from maths.y_bus_square_matrix import YBusSquareMatrix
 
 
 class VariableIndex:
@@ -68,7 +69,9 @@ class PowerFlow:
 
             def getPowerResidues(busIndex: int, variable: str, power: str) -> float:
                 bus = self.buses[busIndex]
-                if power == "p" and (bus.type == BusType.PV or bus.type == BusType.PQ):
+                if power == "p" and (
+                    bus.type.value == BusType.PV.value or bus.type.value == BusType.PQ.value
+                ):
                     p_cal = bus.calcP(self.buses, self.__yMatrix)
                     p_sch = bus.p_sch / self.base  # TODO where more to update?
                     return p_sch - p_cal

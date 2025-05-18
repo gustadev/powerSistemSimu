@@ -1,4 +1,4 @@
-from bus import Bus
+from maths.bus import Bus
 
 
 class BusConnection:
@@ -11,8 +11,8 @@ class BusConnection:
         bc: float = 0.0,
         tap: complex = complex(1.0),
     ):
-        self.tap_bus = tap_bus.index if isinstance(tap_bus, Bus) else tap_bus
-        self.z_bus = z_bus.index if isinstance(z_bus, Bus) else z_bus
+        self.tap_bus: int = tap_bus.index if isinstance(tap_bus, Bus) else tap_bus
+        self.z_bus: int = z_bus.index if isinstance(z_bus, Bus) else z_bus
         self.y = BusConnection.__get_z_or_y(z, y)
         self.bc = bc
         self.tap = tap

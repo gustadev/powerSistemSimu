@@ -1,9 +1,4 @@
-from bus_square_matrix import BusSquareMatrix
-
-
-type BusIndex = int
-
-j: complex = complex(0, 1)
+from maths.bus_square_matrix import BusSquareMatrix
 
 
 class ZBusSquareMatrix:
@@ -12,7 +7,7 @@ class ZBusSquareMatrix:
         self.__log_print: bool = log_print
 
     # Caso 1 - Adicionar um barramento e conecta a terra. Aumenta a ordem da matriz.
-    def add_bus_and_connect_to_ground(self, z: complex) -> BusIndex:
+    def add_bus_and_connect_to_ground(self, z: complex) -> int:
         new_bus = self.__m.size
         if self.__log_print:
             print(f"==========================================")
@@ -27,7 +22,7 @@ class ZBusSquareMatrix:
         return new_bus
 
     # Caso 2 - Adicionar um barramento e conecta a outro barramento. Aumenta a ordem da matriz.
-    def add_bus_and_connect_to_bus(self, z: complex, target: BusIndex) -> BusIndex:
+    def add_bus_and_connect_to_bus(self, z: complex, target: int) -> int:
         new_bus = self.__m.size
         if self.__log_print:
             print(f"==========================================")
@@ -45,7 +40,7 @@ class ZBusSquareMatrix:
         return new_bus
 
     # Caso 3 - Conectar um barramento a terra. Não aumenta a ordem da matriz.
-    def connect_bus_to_ground(self, z: complex, source: BusIndex) -> None:
+    def connect_bus_to_ground(self, z: complex, source: int) -> None:
         if self.__log_print:
             print(f"==========================================")
             print(f"Case 3: connecting bus {source+1} to ground, with z = {z}\n")
@@ -65,20 +60,13 @@ class ZBusSquareMatrix:
 
     # Caso 4 - Conectar um barramento a outro barramento. Não aumenta a ordem da matriz.
     # Considenrado o exemplo de aula, source = 2, target = 3
-    def connect_bus_to_bus(
-        self, z: complex, source: BusIndex, target: BusIndex
-    ) -> None:
+    def connect_bus_to_bus(self, z: complex, source: int, target: int) -> None:
         if self.__log_print:
             print(f"==========================================")
-            print(
-                f"Case 4: connecting bus {source+1} to bus {target+1}, with z = {z}\n"
-            )
+            print(f"Case 4: connecting bus {source+1} to bus {target+1}, with z = {z}\n")
 
         last = (
-            self.__m[source][source]
-            + self.__m[target][target]
-            - 2 * self.__m[source][target]
-            + z
+            self.__m[source][source] + self.__m[target][target] - 2 * self.__m[source][target] + z
         )
 
         def mapper(c: int) -> complex:
@@ -107,40 +95,3 @@ class ZBusSquareMatrix:
     @property
     def z_matrix(self) -> list[list[complex | float]]:
         return self.__m.matrix
-
-
-def main():
-    z = ZBusSquareMatrix(log_print=True)
-
-    bus1 = z.add_bus_and_connect_to_ground(j * 1.2)  # De 1 para 0, z(pu) = j1.2
-
-    bus2 = z.add_bus_and_connect_to_bus(j * 0.2, bus1)  # De 1 para 2, z(pu) = j0.2
-
-    bus3 = z.add_bus_and_connect_to_bus(j * 0.3, bus1)  # De 1 para 3, z(pu) = j0.3
-
-    z.connect_bus_to_ground(j * 1.5, bus3)  # De 3 para 0, z(pu) = j1.5
-
-    z.connect_bus_to_bus(j * 0.15, bus2, bus3)  # De 2 para 3, z(pu) = j0.15
-
-    print(f"Y = \n{z.y_matrix}")
-
-    # Z = FINAL
-    # 0.00+0.70j 0.00+0.66j 0.00+0.63j
-    # 0.00+0.66j 0.00+0.75j 0.00+0.68j
-    # 0.00+0.63j 0.00+0.68j 0.00+0.71j
-
-    # Y =
-    # 0.00-9.17j 0.00+5.00j -0.00+3.33j
-    # 0.00+5.00j 0.00-11.67j -0.00+6.67j
-    # 0.00+3.33j 0.00+6.67j 0.00-10.67j
-
-    # z = ZBusMatrix(log_print=True)
-    # bus1 = z.add_bus_and_connect_to_ground(100000000)
-    # bus2 = z.add_bus_and_connect_to_bus(0.1 * j, bus1)
-    # bus3 = z.add_bus_and_connect_to_bus(0.25 * j, bus1)
-    # z.connect_bus_to_bus(0.2 * j, bus2, bus3)
-    # print(z.ybus)
-
-
-if __name__ == "__main__":
-    main()

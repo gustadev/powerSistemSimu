@@ -1,7 +1,8 @@
 from cmath import pi, sqrt
-from bus import Bus, BusType
-from connection import BusConnection
-from power_flow import PowerFlow
+
+from maths.bus import Bus, BusType
+from maths.connection import BusConnection
+from maths.power_flow import PowerFlow
 
 degToRad: float = pi / 180
 
@@ -164,7 +165,6 @@ def example_14_buses():
             type=BusType.PQ,
         ),
     )
-
     powerFlow.add_connection(BusConnection(bus1, bus2, z=complex(0.01938, 0.05917), bc=0.0528))
     powerFlow.add_connection(BusConnection(bus1, bus5, z=complex(0.05403, 0.22304), bc=0.0492))
     powerFlow.add_connection(BusConnection(bus2, bus3, z=complex(0.04699, 0.19797), bc=0.0438))

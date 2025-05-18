@@ -1,6 +1,7 @@
-from y_bus_square_matrix import YBusSquareMatrix
-from z_bus_square_matrix import ZBusSquareMatrix
 import numpy as np
+
+from maths.y_bus_square_matrix import YBusSquareMatrix
+from maths.z_bus_square_matrix import ZBusSquareMatrix
 
 
 def main():
@@ -39,15 +40,15 @@ def main():
 
     print(f"Z from z = \n{z.z_matrix}")
     print(f"Z from y = \n{y.z_matrix}")
-    diff = z.z_matrix - y.z_matrix
-    avg_sq_error = np.mean(np.abs(diff) ** 2)
+    diff: list[list[complex | float]] = z.z_matrix - y.z_matrix  # type: ignore
+    avg_sq_error = np.mean(np.abs(diff) ** 2)  # type: ignore
     print(f"Average Squared Error between Z matrices = {avg_sq_error}")
 
     print(f"Y from z = \n{z.y_matrix}")
     print(f"Y from y = \n{y.y_matrix}")
-    print(f"Y difference = \n{z.y_matrix - y.y_matrix}")
-    diff = z.y_matrix - y.y_matrix
-    avg_sq_error = np.mean(np.abs(diff) ** 2)
+    print(f"Y difference = \n{z.y_matrix - y.y_matrix}") # type: ignore
+    diff = z.y_matrix - y.y_matrix # type: ignore
+    avg_sq_error = np.mean(np.abs(diff) ** 2) # type: ignore
     print(f"Average Squared Error between Y matrices = {avg_sq_error}")
 
 

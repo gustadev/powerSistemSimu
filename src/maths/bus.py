@@ -1,7 +1,9 @@
 import cmath
 from math import cos, sin
-from y_bus_square_matrix import YBusSquareMatrix
 from enum import Enum
+
+
+from maths.y_bus_square_matrix import YBusSquareMatrix
 
 
 class BusType(Enum):
