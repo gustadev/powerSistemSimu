@@ -1,5 +1,3 @@
-import string
-from typing import *
 from PySide6.QtWidgets import (
     QGraphicsRectItem,
     QGraphicsLineItem,

@@ -6,15 +6,13 @@ from controllers.simulator_controller import ElementEvent, SimulatorController
 
 from PySide6.QtCore import Qt
 from models.bus import Bus
-from models.connection import BusConnection
 from models.network_element import NetworkElement
 from view.circuit_tiles.bus_tile import BusTile
-from view.circuit_tiles.line_tile import LineTile
 from PySide6.QtWidgets import QScrollArea
 from PySide6.QtWidgets import QFrame
 
 
-class ElementList(QWidget):
+class BusList(QWidget):
     def __init__(self):
         super().__init__()
         self.setContentsMargins(0, 0, 0, 0)
@@ -41,9 +39,6 @@ class ElementList(QWidget):
             tile = None
             if isinstance(element, Bus):
                 tile = BusTile(element)
-
-            if isinstance(element, BusConnection):
-                tile = LineTile(element)
 
             if tile:
                 self.inner_layout.addWidget(tile)

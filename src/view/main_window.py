@@ -4,15 +4,17 @@ from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QH
 
 from controllers.simulator_controller import SimulatorController
 from view.board_view import BoardView
-from view.element_list import ElementList
+from view.bus_list import BusList
 from PySide6.QtWidgets import QSizePolicy
+
+from view.line_list import LineList
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         centralWidget = QWidget()
-        self.setWindowTitle("Power Systems Simulator")
+        self.setWindowTitle("Power Systems Simulator - Board")
         # Layout creation
         layoutBtnElements = QHBoxLayout()
         layoutBtnActions = QHBoxLayout()
@@ -33,8 +35,11 @@ class MainWindow(QMainWindow):
         addBusButton.setIcon(QIcon("assets/ico/busbar.png"))
         addBusButton.setIconSize(QSize(70, 30))
 
-        show_network_button = QPushButton("Edit Network")
-        show_network_button.setFixedSize(110, 30)
+        show_buses_button = QPushButton("Buses")
+        show_buses_button.setFixedSize(110, 30)
+
+        show_lines_button = QPushButton("Lines")
+        show_lines_button.setFixedSize(110, 30)
 
         show_y_bar_matrix_button = QPushButton("Y Bar Matrix")
         show_y_bar_matrix_button.setFixedSize(110, 30)
@@ -50,7 +55,8 @@ class MainWindow(QMainWindow):
         # Connect button signal to the board's addSquare method.
         addBusButton.clicked.connect(simulatorInstance.addBus)
         runPowerFlowButton.clicked.connect(simulatorInstance.runPowerFlow)
-        show_network_button.clicked.connect(self.show_network_window)
+        show_buses_button.clicked.connect(self.show_bus_window)
+        show_lines_button.clicked.connect(self.show_line_window)
 
         # Add widgets to the layout.
         layoutBtnElements.addWidget(addBusButton)
@@ -59,20 +65,22 @@ class MainWindow(QMainWindow):
         # Create a horizontal layout to place the board view on the left and a new widget on the right.
 
         layoutBtnActions.addWidget(runPowerFlowButton)
-        layoutBtnActions.addWidget(show_network_button)
+        layoutBtnActions.addWidget(show_buses_button)
         layoutBtnActions.addWidget(show_y_bar_matrix_button)
+        layoutBtnActions.addWidget(show_lines_button)
 
         self.setCentralWidget(centralWidget)
 
-        self.show_network_window()
+        self.show_bus_window()
+        self.show_line_window()
 
-    def show_network_window(self):
+    def show_bus_window(self):
         self.networkWindow = QMainWindow()
         self.networkWindow.setWindowTitle("Network")
         centralWidget = QWidget()
         layout = QVBoxLayout(centralWidget)
 
-        rightWidget = ElementList()
+        rightWidget = BusList()
         rightWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         layout.addWidget(rightWidget)
@@ -81,5 +89,23 @@ class MainWindow(QMainWindow):
         self.networkWindow.setCentralWidget(centralWidget)
         self.networkWindow.resize(800, 600)
         self.networkWindow.show()
+
+        pass
+
+    def show_line_window(self):
+        self.lineWindow = QMainWindow()
+        self.lineWindow.setWindowTitle("Line")
+        centralWidget = QWidget()
+        layout = QVBoxLayout(centralWidget)
+
+        rightWidget = LineList()
+        rightWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+
+        layout.addWidget(rightWidget)
+        # horizontalLayout.setContentsMargins(5, 5, 5, 5)
+
+        self.lineWindow.setCentralWidget(centralWidget)
+        self.lineWindow.resize(800, 600)
+        self.lineWindow.show()
 
         pass
