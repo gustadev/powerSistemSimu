@@ -2,9 +2,10 @@ import cmath
 from typing import Any, Callable
 import numpy
 
-from maths.connection import BusConnection
-from maths.bus import Bus, BusType
-from maths.y_bus_square_matrix import YBusSquareMatrix
+from maths.power_calculator import calcP, calcQ, dPdO, dPdV, dQdO, dQdV
+from models.connection import BusConnection
+from models.bus import Bus, BusType
+from models.y_bus_square_matrix import YBusSquareMatrix
 
 
 class VariableIndex:
@@ -72,25 +73,25 @@ class PowerFlow:
                 if power == "p" and (
                     bus.type.value == BusType.PV.value or bus.type.value == BusType.PQ.value
                 ):
-                    p_cal = bus.calcP(self.buses, self.__yMatrix)
+                    p_cal = calcP(bus, self.buses, self.__yMatrix)
                     p_sch = bus.p_sch / self.base  # TODO where more to update?
                     return p_sch - p_cal
                 elif power == "q" and (bus.type == BusType.PV or bus.type == BusType.PQ):
-                    q_cal = bus.calcQ(self.buses, self.__yMatrix)
+                    q_cal = calcQ(bus, self.buses, self.__yMatrix)
                     q_sch = bus.q_sch / self.base  # TODO where more to update?
                     return q_sch - q_cal
                 return 0
 
             def getJacobianElement(r: int, c: int, _: str, __: str, diff: str) -> float:
-                dSdX: Callable[[int, int, list[Bus], YBusSquareMatrix], float] = Bus.dPdO
+                dSdX: Callable[[int, int, list[Bus], YBusSquareMatrix], float] = dPdO
                 if diff == "∂p/∂o":
-                    dSdX = Bus.dPdO
+                    dSdX = dPdO
                 elif diff == "∂p/∂v":
-                    dSdX = Bus.dPdV
+                    dSdX = dPdV
                 elif diff == "∂q/∂o":
-                    dSdX = Bus.dQdO
+                    dSdX = dQdO
                 else:
-                    dSdX = Bus.dQdV
+                    dSdX = dQdV
                 return dSdX(i=r, j=c, buses=self.buses, Y=self.__yMatrix)
 
             ds = self.__map_indexes_list(getPowerResidues)
@@ -133,8 +134,8 @@ class PowerFlow:
 
         print("\nPower flow solved.")
         for bus in self.buses:
-            bus.p = bus.calcP(self.buses, self.__yMatrix)
-            bus.q = bus.calcQ(self.buses, self.__yMatrix)
+            bus.p = calcP(bus, self.buses, self.__yMatrix)
+            bus.q = calcQ(bus, self.buses, self.__yMatrix)
             print(bus)
 
     def print_state(self):

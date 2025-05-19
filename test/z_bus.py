@@ -1,4 +1,4 @@
-from maths.z_bus_square_matrix import ZBusSquareMatrix
+from models.z_bus_square_matrix import ZBusSquareMatrix
 
 
 def main():

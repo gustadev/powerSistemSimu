@@ -1,4 +1,4 @@
-from maths.bus import Bus
+from models.bus import Bus
 
 
 class BusConnection:

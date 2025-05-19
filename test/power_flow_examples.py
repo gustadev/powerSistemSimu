@@ -1,7 +1,7 @@
 from cmath import pi, sqrt
 
-from maths.bus import Bus, BusType
-from maths.connection import BusConnection
+from models.bus import Bus, BusType
+from models.connection import BusConnection
 from maths.power_flow import PowerFlow
 
 degToRad: float = pi / 180

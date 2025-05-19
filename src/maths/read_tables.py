@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 from typing import Any, Tuple
 
-from maths.bus import Bus, BusType
-from maths.connection import BusConnection
+from models.bus import Bus, BusType
+from models.connection import BusConnection
 from maths.power_flow import PowerFlow
 
 

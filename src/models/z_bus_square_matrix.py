@@ -1,4 +1,4 @@
-from maths.bus_square_matrix import BusSquareMatrix
+from models.bus_square_matrix import BusSquareMatrix
 
 
 class ZBusSquareMatrix:

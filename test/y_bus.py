@@ -1,4 +1,4 @@
-from maths.y_bus_square_matrix import YBusSquareMatrix
+from models.y_bus_square_matrix import YBusSquareMatrix
 
 
 def main():

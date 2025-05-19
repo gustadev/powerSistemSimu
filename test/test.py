@@ -1,7 +1,7 @@
 import numpy as np
 
-from maths.y_bus_square_matrix import YBusSquareMatrix
-from maths.z_bus_square_matrix import ZBusSquareMatrix
+from models.y_bus_square_matrix import YBusSquareMatrix
+from models.z_bus_square_matrix import ZBusSquareMatrix
 
 
 def main():
@@ -46,9 +46,9 @@ def main():
 
     print(f"Y from z = \n{z.y_matrix}")
     print(f"Y from y = \n{y.y_matrix}")
-    print(f"Y difference = \n{z.y_matrix - y.y_matrix}") # type: ignore
-    diff = z.y_matrix - y.y_matrix # type: ignore
-    avg_sq_error = np.mean(np.abs(diff) ** 2) # type: ignore
+    print(f"Y difference = \n{z.y_matrix - y.y_matrix}")  # type: ignore
+    diff = z.y_matrix - y.y_matrix  # type: ignore
+    avg_sq_error = np.mean(np.abs(diff) ** 2)  # type: ignore
     print(f"Average Squared Error between Y matrices = {avg_sq_error}")
 
 
