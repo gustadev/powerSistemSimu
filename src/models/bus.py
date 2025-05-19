@@ -1,6 +1,8 @@
 import cmath
 from enum import Enum
 
+from models.network_element import NetworkElement
+
 
 class BusType(Enum):
     SLACK = 3
@@ -8,27 +10,44 @@ class BusType(Enum):
     PQ = 0
 
 
-class Bus:
+class Bus(NetworkElement):
+    __number: int = 0
+
     def __init__(
         self,
-        name: str,
+        name: str | None = None,
         v: float = 1,
         o: float = 0,
-        load: complex = complex(0),
-        generator: complex = complex(0),
+        load: complex | None = None,
+        generator: complex | None = None,
         q_min: float | None = None,
         q_max: float | None = None,
         type: BusType = BusType.PQ,
         v_rated: float = 1,
         index: int = -1,  # to be used by power flow solver
         shunt: complex = complex(0),
+        number: int | None = None,
+        id: int | None = None,
     ):
+        __load = load if load is not None else complex(0)
+        __generator = generator if generator is not None else complex(0)
+
         self.v_sch: float = v
         self.o_sch: float = o
-        self.p_sch: float = (generator - load).real
-        self.q_sch: float = (generator - load).imag
+        self.p_sch: float = (__generator - __load).real
+        self.q_sch: float = (__generator - __load).imag
 
-        self.name: str = name
+        if number is not None:
+            self.number: int = number
+        else:
+            self.number: int = Bus.__number
+            Bus.__number += 1
+
+        if name:
+            self.name: str = name
+        else:
+            self.name: str = f"Bus {self.number:03d}"
+
         self.v: float = v
         self.o: float = o
         self.p: float = self.p_sch
@@ -41,6 +60,37 @@ class Bus:
         self.type: BusType = type
         self.v_rated: float = v_rated
         self.shunt: complex = shunt
+        super().__init__(name=self.name, id=id)
+
+    def copy_with(
+        self,
+        name: str | None = None,
+        v: float | None = None,
+        o: float | None = None,
+        load: complex | None = None,
+        generator: complex | None = None,
+        q_min: float | None = None,
+        q_max: float | None = None,
+        type: BusType | None = None,
+        v_rated: float | None = None,
+        index: int | None = None,
+        shunt: complex | None = None,
+    ) -> "Bus":
+        return Bus(
+            name=name if name is not None else self.name,
+            number=self.number,
+            v=v if v is not None else self.v,
+            o=o if o is not None else self.o,
+            load=load if load is not None else self.load,
+            generator=generator if generator is not None else self.generator,
+            q_min=q_min if q_min is not None else self.q_min,
+            q_max=q_max if q_max is not None else self.q_max,
+            type=type if type is not None else self.type,
+            v_rated=v_rated if v_rated is not None else self.v_rated,
+            index=index if index is not None else self.index,
+            shunt=shunt if shunt is not None else self.shunt,
+            id=self.id,
+        )
 
     def __str__(self) -> str:
         q_min: str = "        "

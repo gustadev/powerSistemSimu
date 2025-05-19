@@ -7,8 +7,8 @@ from PySide6.QtWidgets import QGraphicsSimpleTextItem
 from PySide6.QtGui import QPen
 
 from controllers.simulator_controller import ElementEvent, SimulatorController
-from models.circuit_element import CircuitElement, DoubleConnectionElement
-from models.transmission_line import TransmissionLineElement
+from models.connection import BusConnection
+from models.network_element import NetworkElement
 
 
 class LinkLineItem(QGraphicsLineItem):
@@ -16,17 +16,17 @@ class LinkLineItem(QGraphicsLineItem):
         self,
         sourceNodeDraggableLink,
         targetNodeDraggableLink,
-        connection: DoubleConnectionElement,
+        connection: BusConnection,
     ):
         super().__init__()
         self.sourceNodeDraggableLink = sourceNodeDraggableLink
         self.targetNodeDraggableLink = targetNodeDraggableLink
         self.setPen(QPen(Qt.blue, 1))
         self.setZValue(0)
-        self.connection: DoubleConnectionElement = connection
+        self.connection: BusConnection = connection
         self.nameLabel = None
         self.center = None
-        if isinstance(connection, TransmissionLineElement):
+        if isinstance(connection, BusConnection):
             self.nameLabel = QGraphicsSimpleTextItem(connection.name)
             self.nameLabel.setBrush(Qt.white)
             self.nameLabel.setParentItem(self)
@@ -44,7 +44,7 @@ class LinkLineItem(QGraphicsLineItem):
         self.updatePosition()
         super().paint(painter, option, widget)
 
-    def circuitListener(self, element: CircuitElement, event: ElementEvent):
+    def circuitListener(self, element: NetworkElement, event: ElementEvent):
         if event == ElementEvent.UPDATED and self.connection.id == element.id:
             self.connection = element
             self.nameLabel.setText(element.name)

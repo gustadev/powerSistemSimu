@@ -1,13 +1,15 @@
-from typing import *
+import PySide6
 from PySide6.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
 )
-from PySide6.QtGui import QPainter,Qt
+from PySide6.QtGui import QPainter, Qt
 from PySide6.QtCore import QRectF
 
 from controllers.simulator_controller import ElementEvent, SimulatorController
-from models.circuit_element import CircuitElement, DoubleConnectionElement
+from models.bus import Bus
+from models.connection import BusConnection
+from models.network_element import NetworkElement
 from view.circuit_node_widget import CircuitNodeWidget
 from view.link_line_item import LinkLineItem
 
@@ -18,17 +20,16 @@ class BoardView(QGraphicsView):
         self.setScene(QGraphicsScene(self))
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setBackgroundBrush(Qt.GlobalColor.white)
-        
+
         # self.setSceneRect(0, 0, 600, 400)
-        self.simulatorWidgets = dict()
+        self.simulator_widgets = dict()
         simulatorInstance = SimulatorController.instance()
         simulatorInstance.listen(self.circuitListener)
-        
 
     def drawBackground(self, painter: QPainter, rect: QRectF):
         painter.setPen(Qt.GlobalColor.lightGray)
         super().drawBackground(painter, rect)
-        
+
         # Define grid spacing
         gridSize = 20
 
@@ -45,23 +46,19 @@ class BoardView(QGraphicsView):
             painter.drawLine(rect.left(), y, rect.right(), y)
 
     # Listens to the simulator events and updates the board
-    def circuitListener(self, element: CircuitElement, event: ElementEvent):
+    def circuitListener(self, element: NetworkElement, event: ElementEvent):
         # Adds node component to the board
-        if event is ElementEvent.CREATED and not isinstance(
-            element, DoubleConnectionElement
-        ):
+        if event is ElementEvent.CREATED and isinstance(element, Bus):
             widget = CircuitNodeWidget(50, 50, element)
             self.scene().addItem(widget)
-            self.simulatorWidgets[element.id] = widget
+            self.simulator_widgets[element.id] = widget
             return
 
         # Adds line between two components in the board
         # TODO bug: somethimes not creating wire or TL when there is a block selected
-        if event is ElementEvent.CREATED and isinstance(
-            element, DoubleConnectionElement
-        ):
-            sourceWidget = self.simulatorWidgets[element.source_id].link
-            targetWidget = self.simulatorWidgets[element.target_id].link
+        if event is ElementEvent.CREATED and isinstance(element, BusConnection):
+            sourceWidget = self.simulator_widgets[element.tap_bus_id].link
+            targetWidget = self.simulator_widgets[element.z_bus_id].link
             self.scene().addItem(LinkLineItem(sourceWidget, targetWidget, element))
             return
 

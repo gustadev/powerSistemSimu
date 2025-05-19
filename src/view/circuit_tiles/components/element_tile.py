@@ -1,19 +1,15 @@
 from typing import *
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton
-
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton
 
 from typing import Generic, Type, TypeVar
 
-
 from controllers.simulator_controller import SimulatorController
-from enums.element_event import ElementEvent
-from models.circuit_element import CircuitElement
+from models.network_element import ElementEvent, NetworkElement
 from view.circuit_tiles.components.text_field import NotEmptyValidator, TextField
 from view.circuit_tiles.components.title_label import TitleLabel
 
-
-E = TypeVar("Type", bound=CircuitElement)
+E = TypeVar("Type", bound=NetworkElement)
 
 
 class ElementTile(Generic[E], QWidget):
@@ -25,12 +21,11 @@ class ElementTile(Generic[E], QWidget):
         self.build_widget()
         self.update_form_values()
 
-
     @property
     def element(self) -> E:
         return self.__element
 
-    def circuitListener(self, element: CircuitElement, event: ElementEvent):
+    def circuitListener(self, element: NetworkElement, event: ElementEvent):
         if (
             event == ElementEvent.UPDATED
             and element.id == self.element.id
@@ -43,11 +38,11 @@ class ElementTile(Generic[E], QWidget):
         self.nameField.setValue(self.element.name)
 
     def build_widget(self):
-        layout = QVBoxLayout(self)
+        layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(2)
 
-        self._pending_title = TitleLabel(self.element.type)
+        self._pending_title = TitleLabel(self.element.name)
         layout.addWidget(self._pending_title)
 
         self.build_form(layout)
@@ -56,10 +51,8 @@ class ElementTile(Generic[E], QWidget):
         self.submit_button.clicked.connect(self.edit)
         layout.addWidget(self.submit_button)
 
-    def build_form(self, layout: QVBoxLayout):
-        self.nameField = TextField(
-            title="Name", type=str, validators=[NotEmptyValidator()]
-        )
+    def build_form(self, layout: QHBoxLayout):
+        self.nameField = TextField(title="Name", type=str, validators=[NotEmptyValidator()])
         layout.addWidget(self.nameField)
 
     def edit(self):

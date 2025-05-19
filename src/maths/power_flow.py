@@ -43,8 +43,8 @@ class PowerFlow:
         for connection in self.connections:
             bus_matrix.connect_bus_to_bus(
                 y=connection.y,
-                source=connection.tap_bus,
-                target=connection.z_bus,
+                source=connection.tap_bus_id,
+                target=connection.z_bus_id,
                 bc=connection.bc,
                 tap=connection.tap,
             )
