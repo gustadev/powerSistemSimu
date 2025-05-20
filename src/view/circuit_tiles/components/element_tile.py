@@ -1,5 +1,3 @@
-from typing import *
-
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton
 
 from typing import Generic, Type, TypeVar
@@ -7,9 +5,9 @@ from typing import Generic, Type, TypeVar
 from controllers.simulator_controller import SimulatorController
 from models.network_element import ElementEvent, NetworkElement
 from view.circuit_tiles.components.text_field import NotEmptyValidator, TextField
-from view.circuit_tiles.components.title_label import TitleLabel
 
-E = TypeVar("Type", bound=NetworkElement)
+
+E = TypeVar("E", bound=NetworkElement)
 
 
 class ElementTile(Generic[E], QWidget):
@@ -35,15 +33,12 @@ class ElementTile(Generic[E], QWidget):
             self.update_form_values()
 
     def update_form_values(self):
-        self.nameField.setValue(self.element.name)
+        pass
 
     def build_widget(self):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(2)
-
-        self._pending_title = TitleLabel(self.element.name)
-        layout.addWidget(self._pending_title)
+        layout.setSpacing(0)
 
         self.build_form(layout)
 
@@ -52,8 +47,7 @@ class ElementTile(Generic[E], QWidget):
         layout.addWidget(self.submit_button)
 
     def build_form(self, layout: QHBoxLayout):
-        self.nameField = TextField(title="Name", type=str, validators=[NotEmptyValidator()])
-        layout.addWidget(self.nameField)
+        pass
 
     def edit(self):
         pass

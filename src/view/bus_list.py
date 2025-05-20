@@ -1,15 +1,12 @@
 from typing import *
-from PySide6.QtWidgets import QWidget, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout
+from PySide6.QtWidgets import QScrollArea, QFrame
+from PySide6.QtCore import Qt
 
 from controllers.simulator_controller import ElementEvent, SimulatorController
-
-
-from PySide6.QtCore import Qt
 from models.bus import Bus
 from models.network_element import NetworkElement
 from view.circuit_tiles.bus_tile import BusTile
-from PySide6.QtWidgets import QScrollArea
-from PySide6.QtWidgets import QFrame
 
 
 class BusList(QWidget):
@@ -30,6 +27,33 @@ class BusList(QWidget):
         self.inner_layout.setContentsMargins(2, 2, 2, 2)
         self.inner_layout.setSpacing(0)
 
+        # Add header to the scrollable list with updated field names
+        header_frame = QFrame()
+        header_frame.setFrameShape(QFrame.StyledPanel)
+        header_layout = QHBoxLayout(header_frame)
+        header_layout.setContentsMargins(8, 8, 8, 8)
+
+        # Define the updated fields names
+        fields = [
+            "name",
+            "number",
+            "type",
+            "v",
+            "o",
+            "p_load",
+            "q_load",
+            "p_gen",
+            "q_gen",
+            "q_min",
+            "q_max",
+            "shunt_b",
+            "shunt_g",
+            "",
+        ]
+        for field in fields:
+            header_layout.addWidget(QLabel(field))
+        self.inner_layout.addWidget(header_frame)
+
         scroll_area.setWidget(container)
         self.layout().addWidget(scroll_area)
         self.layout().setContentsMargins(0, 0, 0, 0)
@@ -41,7 +65,7 @@ class BusList(QWidget):
                 tile = BusTile(element)
 
             if tile:
-                self.inner_layout.addWidget(tile)
+                # Optionally, wrap the tile in a card
                 card = QFrame()
                 card.setFrameShape(QFrame.StyledPanel)
                 card.setFrameShadow(QFrame.Raised)
@@ -50,4 +74,3 @@ class BusList(QWidget):
                 card_layout.addWidget(tile)
                 self.inner_layout.addWidget(card)
                 self.items[element.id] = tile
-        pass

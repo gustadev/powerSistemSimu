@@ -1,14 +1,10 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QScrollArea, QFrame, QHBoxLayout, QLabel
+from PySide6.QtCore import Qt
 
 from controllers.simulator_controller import ElementEvent, SimulatorController
-
-
-from PySide6.QtCore import Qt
 from models.connection import BusConnection
 from models.network_element import NetworkElement
 from view.circuit_tiles.line_tile import LineTile
-from PySide6.QtWidgets import QScrollArea
-from PySide6.QtWidgets import QFrame
 
 
 class LineList(QWidget):
@@ -19,6 +15,7 @@ class LineList(QWidget):
         self.simulatorInstance.listen(self.circuitListener)
         self.setLayout(QVBoxLayout())
         self.items = dict()
+
         scroll_area = QScrollArea(self)
         scroll_area.setWidgetResizable(True)
 
@@ -28,6 +25,28 @@ class LineList(QWidget):
         self.inner_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.inner_layout.setContentsMargins(2, 2, 2, 2)
         self.inner_layout.setSpacing(0)
+
+        # Add header to the scrollable list with updated field names
+        header_frame = QFrame()
+        header_frame.setFrameShape(QFrame.StyledPanel)
+        header_layout = QHBoxLayout(header_frame)
+        header_layout.setContentsMargins(8, 8, 8, 8)
+
+        fields = [
+            "tap bus",
+            "z bus",
+            "",
+            "r",
+            "x",
+            "g",
+            "b",
+            "bc",
+            "tap",
+            "",
+        ]
+        for field in fields:
+            header_layout.addWidget(QLabel(field))
+        self.inner_layout.addWidget(header_frame)
 
         scroll_area.setWidget(container)
         self.layout().addWidget(scroll_area)
@@ -41,7 +60,6 @@ class LineList(QWidget):
                 tile = LineTile(element)
 
             if tile:
-                self.inner_layout.addWidget(tile)
                 card = QFrame()
                 card.setFrameShape(QFrame.StyledPanel)
                 card.setFrameShadow(QFrame.Raised)
@@ -50,4 +68,3 @@ class LineList(QWidget):
                 card_layout.addWidget(tile)
                 self.inner_layout.addWidget(card)
                 self.items[element.id] = tile
-        pass

@@ -4,6 +4,7 @@ from maths.power_flow import PowerFlow
 from models.bus import Bus
 from models.connection import BusConnection
 from models.network_element import ElementEvent, NetworkElement
+from typing import cast
 
 
 class SimulatorController:
@@ -22,14 +23,14 @@ class SimulatorController:
     def listen(self, callback: Callable[[NetworkElement, ElementEvent], None]) -> None:
         self.__listeners.append(callback)
 
-    def addBus(self) -> None:
-        self.__add_element(Bus())
+    def addBus(self) -> Bus:
+        return cast(Bus, self.__add_element(Bus()))
 
-    def addConnection(self, source: Bus, target: Bus) -> None:
+    def addConnection(self, source: Bus, target: Bus) -> BusConnection:
         line = BusConnection(source, target, y=complex(1))
-        self.__add_element(line)
+        return cast(BusConnection, self.__add_element(line))
 
-    def __add_element(self, element: NetworkElement) -> None:
+    def __add_element(self, element: NetworkElement) -> NetworkElement:
         if isinstance(element, Bus):
             element = self.__network.add_bus(element)
         elif isinstance(element, BusConnection):
@@ -38,31 +39,28 @@ class SimulatorController:
         for callback in self.__listeners:
             callback(element, ElementEvent.CREATED)
 
+        return element
+
     def updateElement(self, element: NetworkElement) -> None:
-        if isinstance(element, Bus):
-            for index, bus in enumerate(self.__network.buses):
-                if bus.number == element.number:
-                    self.__network.buses[index] = element
-                    break
-        elif isinstance(element, BusConnection):
-            for index, connection in enumerate(self.__network.connections):
-                if connection.number == element.number:
-                    self.__network.connections[index] = element
-                    break
+        if element.id in self.__network.buses and isinstance(element, Bus):
+            self.__network.buses[element.id] = element
+        elif id in self.__network.connections and isinstance(element, BusConnection):
+            self.__network.connections[element.id] = element
+        else:
+            return
 
         for callback in self.__listeners:
             callback(element, ElementEvent.UPDATED)
 
-    def getElementByNumber(self, number: str) -> NetworkElement | None:
-        if isinstance(number, Bus):
-            for bus in self.__network.buses:
-                if bus.number == number:
-                    return bus
-        elif isinstance(number, BusConnection):
-            for connection in self.__network.connections:
-                if connection.number == number:
-                    return connection
-        return None
+    def get_bus_by_id(self, id: int) -> Bus:
+        if id in self.__network.buses:
+            return self.__network.buses[id]
+        raise ValueError(f"Bus with id {id} not found")
+
+    def get_connection_by_id(self, id: int) -> BusConnection:
+        if id in self.__network.connections:
+            return self.__network.connections[id]
+        raise ValueError(f"Connection with id {id} not found")
 
     def runPowerFlow(self):
         self.__network.solve()

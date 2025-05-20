@@ -1,10 +1,8 @@
-from typing import *
-
 from PySide6.QtWidgets import QLabel
 from PySide6.QtWidgets import QHBoxLayout
 from typing import cast
 from PySide6.QtWidgets import QWidget, QLineEdit
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import Qt
 
 
 from typing import Generic, Type, TypeVar
@@ -40,14 +38,14 @@ class NumberValidator(TextValidator):
             return f"{title} must be a number"
 
 
-T = TypeVar("Type", str, int, float)
+T = TypeVar("T", str, int, float)
 
 
 class TextField(Generic[T], QWidget):
     def __init__(
         self,
-        title: str,
-        value: T = None,
+        value: T | None = None,
+        title: str = "",
         type: Type[T] = str,
         trailing: str = "",
         enabled: bool = True,
@@ -60,7 +58,8 @@ class TextField(Generic[T], QWidget):
         self.validators = validators
         self.field = QLineEdit()
         # self.field.setFixedSize(QSize(50,30))
-        self.field.setText(str(value))
+        if value is not None:
+            self.field.setText(str(value))
         self.label = QLabel(self.title)
         # self.label.setFixedSize(QSize(50,30))
         layout = QHBoxLayout(self)
@@ -73,10 +72,10 @@ class TextField(Generic[T], QWidget):
             layout.addWidget(QLabel(trailing))
         self.setLayout(layout)
 
-    def getValue(self) -> T:
+    def getValue(self) -> T | None:
         text = self.field.text()
         if self.type == str:
-            return text
+            return cast(T, text)
         elif self.type == int:
             return cast(T, int(text))
         elif self.type == float:

@@ -20,19 +20,19 @@ class VariableIndex:
 
 class PowerFlow:
     def __init__(self, base: float = 1):
-        self.buses: list[Bus] = list[Bus]()
-        self.connections: list[BusConnection] = list[BusConnection]()
+        self.buses: dict[int, Bus] = dict[int, Bus]()
+        self.connections: dict[int, BusConnection] = dict[int, BusConnection]()
         self.__yMatrix: YBusSquareMatrix = YBusSquareMatrix()
         self.indexes = list[VariableIndex]()
         self.base = base
 
     def add_bus(self, bus: Bus) -> Bus:
-        self.buses.append(bus)
+        self.buses[bus.id] = bus
         bus.index = len(self.buses) - 1
         return bus
 
     def add_connection(self, connection: BusConnection) -> None:
-        self.connections.append(connection)
+        self.connections[connection.id] = connection
 
     def build_bus_matrix(self) -> YBusSquareMatrix:
         bus_matrix: YBusSquareMatrix = YBusSquareMatrix()
