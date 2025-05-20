@@ -22,21 +22,16 @@ class LineTile(ElementTile[BusConnection]):
         super().build_form(layout)
 
         # Field 1: "tap bus" (string)
-        self.tapBusField = TextField[int](
-            type=int,
-            validators=[NotEmptyValidator()],
-        )
+        self.tapBusField = TextField[int](type=int, validators=[NotEmptyValidator()], enabled=False)
         layout.addWidget(self.tapBusField)
 
         # Field 2: "z bus" (string)
-        self.zBusField = TextField[int](
-            type=int,
-            validators=[NotEmptyValidator()],
-        )
+        self.zBusField = TextField[int](type=int, validators=[NotEmptyValidator()], enabled=False)
         layout.addWidget(self.zBusField)
         # Field 3: unnamed dropdown (allow user to pick Z or Y)
         self.choiceField = QComboBox()
         self.choiceField.addItems(["Z", "Y"])
+        self.choiceField.currentIndexChanged.connect(self.on_choice_field_updated)
         layout.addWidget(self.choiceField)
 
         # Field 4: "r" (float) – using (1/element.y).real if available
@@ -57,6 +52,7 @@ class LineTile(ElementTile[BusConnection]):
         self.conductanceField = TextField[float](
             type=float,
             validators=[NotEmptyValidator(), NumberValidator(min=0)],
+            enabled=False,
         )
         layout.addWidget(self.conductanceField)
 
@@ -64,6 +60,7 @@ class LineTile(ElementTile[BusConnection]):
         self.susceptanceField = TextField[float](
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
+            enabled=False,
         )
         layout.addWidget(self.susceptanceField)
 
@@ -80,6 +77,19 @@ class LineTile(ElementTile[BusConnection]):
             validators=[NotEmptyValidator(), NumberValidator()],
         )
         layout.addWidget(self.tapField)
+
+    def on_choice_field_updated(self, option: int):
+        if option == 0:  # Z
+            self.resistanceField.setEnabled(True)
+            self.reactanceField.setEnabled(True)
+            self.conductanceField.setEnabled(False)
+            self.susceptanceField.setEnabled(False)
+        elif option == 1:  # Y
+            self.resistanceField.setEnabled(False)
+            self.reactanceField.setEnabled(False)
+            self.conductanceField.setEnabled(True)
+            self.susceptanceField.setEnabled(True)
+        pass
 
     def update_form_values(self):
         super().update_form_values()
