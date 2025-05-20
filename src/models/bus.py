@@ -16,18 +16,18 @@ class Bus(NetworkElement):
     def __init__(
         self,
         name: str | None = None,
-        v: float = 1,
-        o: float = 0,
+        v: float = 1.0,
+        o: float = 0.0,
         load: complex | None = None,
         generator: complex | None = None,
         q_min: float | None = None,
         q_max: float | None = None,
         type: BusType = BusType.PQ,
-        v_rated: float = 1,
+        v_rated: float = 1.0,
         index: int = -1,  # to be used by power flow solver
-        shunt: complex = complex(0),
+        shunt: complex = complex(0.0),
         number: int | None = None,
-        id: int | None = None,
+        id: str | None = None,
     ):
         __load = load if load is not None else complex(0)
         __generator = generator if generator is not None else complex(0)
@@ -60,11 +60,12 @@ class Bus(NetworkElement):
         self.type: BusType = type
         self.v_rated: float = v_rated
         self.shunt: complex = shunt
-        super().__init__(name=self.name, id=id)
+        super().__init__(name=self.name, id=id, type="B")
 
     def copy_with(
         self,
         name: str | None = None,
+        number: int | None = None,
         v: float | None = None,
         o: float | None = None,
         load: complex | None = None,
@@ -78,7 +79,7 @@ class Bus(NetworkElement):
     ) -> "Bus":
         return Bus(
             name=name if name is not None else self.name,
-            number=self.number,
+            number=number if number is not None else self.number,
             v=v if v is not None else self.v,
             o=o if o is not None else self.o,
             load=load if load is not None else self.load,

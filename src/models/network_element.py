@@ -2,18 +2,25 @@ from enum import Enum
 
 
 class NetworkElement:
-    __id_increment: int = 0
+    __id_increment: dict[str, int] = dict[str, int]()
 
-    def __init__(self, name: str, id: int | None = None):
+    def __init__(
+        self,
+        name: str,
+        type: str,
+        id: str | None = None,
+    ):
         self.name: str = name
-        if id:
-            self.__id: int = id
+        if id is not None:
+            self.__id: str = id
         else:
-            self.__id: int = NetworkElement.__id_increment
-            NetworkElement.__id_increment += 1
+            if type not in NetworkElement.__id_increment:
+                NetworkElement.__id_increment[type] = 0
+            NetworkElement.__id_increment[type] += 1
+            self.__id: str = f"{type}_{NetworkElement.__id_increment[type]}"
 
     @property
-    def id(self) -> int:
+    def id(self) -> str:
         return self.__id
 
 

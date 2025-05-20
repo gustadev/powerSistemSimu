@@ -4,6 +4,7 @@ from controllers.simulator_controller import SimulatorController
 
 from models.bus import Bus
 from models.connection import BusConnection
+from models.network_element import ElementEvent, NetworkElement
 from view.circuit_tiles.components.element_tile import ElementTile
 from PySide6.QtWidgets import QComboBox
 from view.circuit_tiles.components.text_field import (
@@ -22,15 +23,15 @@ class LineTile(ElementTile[BusConnection]):
         super().build_form(layout)
 
         # Field 1: "tap bus" (string)
-        self.tapBusField = TextField[int](type=int, validators=[NotEmptyValidator()], enabled=False)
+        self.tapBusField = TextField[str](type=str, enabled=False)
         layout.addWidget(self.tapBusField)
 
         # Field 2: "z bus" (string)
-        self.zBusField = TextField[int](type=int, validators=[NotEmptyValidator()], enabled=False)
+        self.zBusField = TextField[str](type=str, enabled=False)
         layout.addWidget(self.zBusField)
         # Field 3: unnamed dropdown (allow user to pick Z or Y)
         self.choiceField = QComboBox()
-        self.choiceField.addItems(["Z", "Y"])
+        self.choiceField.addItems(["Z", "Y"])  # type: ignore
         self.choiceField.currentIndexChanged.connect(self.on_choice_field_updated)
         layout.addWidget(self.choiceField)
 
@@ -38,6 +39,7 @@ class LineTile(ElementTile[BusConnection]):
         self.resistanceField = TextField[float](
             type=float,
             validators=[NotEmptyValidator(), NumberValidator(min=0)],
+            default_Value=1.0,
         )
         layout.addWidget(self.resistanceField)
 
@@ -45,6 +47,7 @@ class LineTile(ElementTile[BusConnection]):
         self.reactanceField = TextField[float](
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
+            default_Value=0.0,
         )
         layout.addWidget(self.reactanceField)
 
@@ -53,6 +56,7 @@ class LineTile(ElementTile[BusConnection]):
             type=float,
             validators=[NotEmptyValidator(), NumberValidator(min=0)],
             enabled=False,
+            default_Value=1.0,
         )
         layout.addWidget(self.conductanceField)
 
@@ -61,6 +65,7 @@ class LineTile(ElementTile[BusConnection]):
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
             enabled=False,
+            default_Value=0.0,
         )
         layout.addWidget(self.susceptanceField)
 
@@ -68,6 +73,7 @@ class LineTile(ElementTile[BusConnection]):
         self.bcField = TextField[float](
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
+            default_Value=0.0,
         )
         layout.addWidget(self.bcField)
 
@@ -75,6 +81,7 @@ class LineTile(ElementTile[BusConnection]):
         self.tapField = TextField[float](
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
+            default_Value=1.0,
         )
         layout.addWidget(self.tapField)
 
@@ -96,8 +103,8 @@ class LineTile(ElementTile[BusConnection]):
         tap_bus: Bus = SimulatorController.instance().get_bus_by_id(self.element.tap_bus_id)
         z_bus: Bus = SimulatorController.instance().get_bus_by_id(self.element.z_bus_id)
         z: complex = 1 / self.element.y if self.element.y else 0.0
-        self.tapBusField.setValue(tap_bus.number)
-        self.zBusField.setValue(z_bus.number)
+        self.tapBusField.setValue(tap_bus.name)
+        self.zBusField.setValue(z_bus.name)
         self.resistanceField.setValue(z.real)
         self.reactanceField.setValue(z.imag)
         self.conductanceField.setValue(self.element.y.real)
@@ -105,41 +112,44 @@ class LineTile(ElementTile[BusConnection]):
         self.bcField.setValue(self.element.bc)
         self.tapField.setValue(self.element.tap.real)
 
-    def edit(self):
-        # Validate all fields
-        for validator in [
-            self.nameField.validate,
-            self.tapBusField.validate,
-            self.zBusField.validate,
-            self.choiceField.validate,
-            self.resistanceField.validate,
-            self.reactanceField.validate,
-            self.conductanceField.validate,
-            self.susceptanceField.validate,
-            self.bcField.validate,
-            self.tapField.validate,
-            self.extraField.validate,
-        ]:
-            if not validator():
-                return
+    def validate(self) -> bool:
+        return True  # TODO implement validation
 
-        # Create a copy of the element with the updated values
-        copy = self.element.copyWith(
-            name=self.nameField.getValue(),
-            tap_bus=self.tapBusField.getValue(),
-            z_bus=self.zBusField.getValue(),
-            # The user choice can be handled as needed from choiceField.getValue()
-            resistance=self.resistanceField.getValue(),
-            reactance=self.reactanceField.getValue(),
-            conductance=self.conductanceField.getValue(),
-            susceptance=self.susceptanceField.getValue(),
-            bc=self.bcField.getValue(),
-            tap=self.tapField.getValue(),
-            # extraField can be processed if needed
+    def save(self) -> None:
+        y: complex = complex(0)
+        if self.choiceField.currentIndex() == 0:
+            r = self.resistanceField.getValue()
+            x = self.reactanceField.getValue()
+            if r is None:
+                r = 1.0
+            if x is None:
+                x = 0.0
+            y = 1 / complex(r, x)
+            # TODO add validation to prevent inifite Y
+        else:
+            g = self.conductanceField.getValue()
+            b = self.susceptanceField.getValue()
+            if g is None:
+                g = 1.0
+            if b is None:
+                b = 0.0
+            y = complex(g, b)
+        bc = self.bcField.getValue()
+        tap = self.tapField.getValue()
+        if bc is None:
+            bc = 0.0
+        if tap is None:
+            tap = 1.0
+
+        SimulatorController.instance().updateElement(
+            self.element.copyWith(y=y, bc=bc, tap=complex(tap))
         )
 
-        SimulatorController.instance().updateElement(copy)
-
-    def circuitListener(self, element, event):
-        # Optionally update values in response to changes.
-        pass
+    def circuitListener(self, element: NetworkElement, event: ElementEvent):
+        super().circuitListener(element, event)
+        if (
+            event == ElementEvent.UPDATED
+            and isinstance(element, Bus)
+            and element.id in (self.element.tap_bus_id, self.element.z_bus_id)
+        ):
+            self.update_form_values()

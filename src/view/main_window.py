@@ -64,10 +64,10 @@ class MainWindow(QMainWindow):
 
         # Create a horizontal layout to place the board view on the left and a new widget on the right.
 
-        layoutBtnActions.addWidget(runPowerFlowButton)
         layoutBtnActions.addWidget(show_buses_button)
-        layoutBtnActions.addWidget(show_y_bar_matrix_button)
         layoutBtnActions.addWidget(show_lines_button)
+        layoutBtnActions.addWidget(show_y_bar_matrix_button)
+        layoutBtnActions.addWidget(runPowerFlowButton)
 
         self.setCentralWidget(centralWidget)
 
@@ -76,7 +76,7 @@ class MainWindow(QMainWindow):
 
     def show_bus_window(self):
         self.networkWindow = QMainWindow()
-        self.networkWindow.setWindowTitle("Network")
+        self.networkWindow.setWindowTitle("Bus Table")
         centralWidget = QWidget()
         layout = QVBoxLayout(centralWidget)
 
@@ -94,7 +94,7 @@ class MainWindow(QMainWindow):
 
     def show_line_window(self):
         self.lineWindow = QMainWindow()
-        self.lineWindow.setWindowTitle("Line")
+        self.lineWindow.setWindowTitle("Line Table")
         centralWidget = QWidget()
         layout = QVBoxLayout(centralWidget)
 

@@ -1,6 +1,13 @@
 from typing import *
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout
-from PySide6.QtWidgets import QScrollArea, QFrame
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QLabel,
+    QHBoxLayout,
+    QScrollArea,
+    QFrame,
+    QPushButton,
+)
 from PySide6.QtCore import Qt
 
 from controllers.simulator_controller import ElementEvent, SimulatorController
@@ -16,7 +23,7 @@ class BusList(QWidget):
         self.simulatorInstance = SimulatorController.instance()
         self.simulatorInstance.listen(self.circuitListener)
         self.setLayout(QVBoxLayout())
-        self.items = dict()
+        self.items: dict[int, BusTile] = dict[int, BusTile]()
         scroll_area = QScrollArea(self)
         scroll_area.setWidgetResizable(True)
 
@@ -33,7 +40,6 @@ class BusList(QWidget):
         header_layout = QHBoxLayout(header_frame)
         header_layout.setContentsMargins(8, 8, 8, 8)
 
-        # Define the updated fields names
         fields = [
             "name",
             "number",
@@ -48,7 +54,6 @@ class BusList(QWidget):
             "q_max",
             "shunt_b",
             "shunt_g",
-            "",
         ]
         for field in fields:
             header_layout.addWidget(QLabel(field))
@@ -57,6 +62,23 @@ class BusList(QWidget):
         scroll_area.setWidget(container)
         self.layout().addWidget(scroll_area)
         self.layout().setContentsMargins(0, 0, 0, 0)
+
+        # Add the Save button outside the scrollable area, at the bottom
+        save_button = QPushButton("Save")
+        self.layout().addWidget(save_button)
+
+        save_button.clicked.connect(self.save)
+
+    def save(self):
+        valid: bool = True
+        for tile in self.items.values():
+            if not tile.validate():
+                valid = False
+        if not valid:
+            return
+
+        for tile in self.items.values():
+            tile.save()
 
     def circuitListener(self, element: NetworkElement, event: ElementEvent):
         if event is ElementEvent.CREATED:

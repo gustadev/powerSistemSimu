@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QLabel
 from PySide6.QtWidgets import QHBoxLayout
-from typing import cast
+from typing import Callable, cast
 from PySide6.QtWidgets import QWidget, QLineEdit
 from PySide6.QtCore import Qt
 
@@ -45,6 +45,7 @@ class TextField(Generic[T], QWidget):
     def __init__(
         self,
         value: T | None = None,
+        default_Value: T | None = None,
         title: str = "",
         type: Type[T] = str,
         trailing: str = "",
@@ -53,6 +54,7 @@ class TextField(Generic[T], QWidget):
     ):
         super().__init__()
         self.setEnabled(enabled)
+        self.default_Value = default_Value
         self.title = title
         self.type = type
         self.validators = validators
@@ -72,17 +74,31 @@ class TextField(Generic[T], QWidget):
             layout.addWidget(QLabel(trailing))
         self.setLayout(layout)
 
+        orig_focus_out_event = self.field.focusOutEvent
+
+        def new_focus_out_event(event):
+            orig_focus_out_event(event)
+            self.__on_click_outside()
+
+        self.field.focusOutEvent = new_focus_out_event
+
     def getValue(self) -> T | None:
-        text = self.field.text()
-        if self.type == str:
-            return cast(T, text)
-        elif self.type == int:
-            return cast(T, int(text))
-        elif self.type == float:
-            return cast(T, float(text))
+        try:
+            text = self.field.text()
+            if self.type == str:
+                return cast(T, text)
+            elif self.type == int:
+                return cast(T, int(text))
+            elif self.type == float:
+                return cast(T, float(text))
+        except:
+            return None
 
     def setValue(self, value: T):
-        self.field.setText(str(value))
+        self.__set_value_string(value)
+
+    def clearValue(self):
+        self.field.clear()
 
     def validate(self) -> bool:
         text = self.field.text()
@@ -91,3 +107,18 @@ class TextField(Generic[T], QWidget):
             if result:
                 return False
         return True
+
+    def __on_click_outside(self):
+        value = self.getValue()
+        if value is None and self.default_Value is not None:
+            self.__set_value_string(self.default_Value)
+            return
+
+        if value:
+            self.__set_value_string(value)
+
+    def __set_value_string(self, value: T) -> None:
+        if self.type is float and isinstance(value, float):
+            self.field.setText(f"{value:8.4f}")
+        else:
+            self.field.setText(str(value))

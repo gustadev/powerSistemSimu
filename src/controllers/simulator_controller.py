@@ -17,7 +17,8 @@ class SimulatorController:
         return SimulatorController.__instance
 
     def __init__(self):
-        self.__network = PowerFlow()  # TODO rename to network
+        self.__buses = dict[str, Bus]()
+        self.__connections = dict[str, BusConnection]()
         self.__listeners: list[Callable[[NetworkElement, ElementEvent], None]] = []
 
     def listen(self, callback: Callable[[NetworkElement, ElementEvent], None]) -> None:
@@ -32,9 +33,9 @@ class SimulatorController:
 
     def __add_element(self, element: NetworkElement) -> NetworkElement:
         if isinstance(element, Bus):
-            element = self.__network.add_bus(element)
+            self.__buses[element.id] = element
         elif isinstance(element, BusConnection):
-            self.__network.add_connection(element)
+            self.__connections[element.id] = element
 
         for callback in self.__listeners:
             callback(element, ElementEvent.CREATED)
@@ -42,36 +43,37 @@ class SimulatorController:
         return element
 
     def updateElement(self, element: NetworkElement) -> None:
-        if element.id in self.__network.buses and isinstance(element, Bus):
-            self.__network.buses[element.id] = element
-        elif id in self.__network.connections and isinstance(element, BusConnection):
-            self.__network.connections[element.id] = element
+        if element.id in self.__buses and isinstance(element, Bus):
+            self.__buses[element.id] = element
+        elif element.id in self.__connections and isinstance(element, BusConnection):
+            self.__connections[element.id] = element
         else:
             return
 
         for callback in self.__listeners:
             callback(element, ElementEvent.UPDATED)
 
-    def get_bus_by_id(self, id: int) -> Bus:
-        if id in self.__network.buses:
-            return self.__network.buses[id]
+    def get_bus_by_id(self, id: str) -> Bus:
+        if id in self.__buses:
+            return self.__buses[id]
         raise ValueError(f"Bus with id {id} not found")
 
-    def get_connection_by_id(self, id: int) -> BusConnection:
-        if id in self.__network.connections:
-            return self.__network.connections[id]
+    def get_connection_by_id(self, id: str) -> BusConnection:
+        if id in self.__connections:
+            return self.__connections[id]
         raise ValueError(f"Connection with id {id} not found")
 
     def runPowerFlow(self):
-        self.__network.solve()
+        # self.__network.solve()
+        pass
 
     def printNetwork(self):
         print("Network:")
         print("Buses:")
-        for bus in self.__network.buses:
+        for bus in self.__buses:
             print(bus)
         print("Connections:")
-        for connection in self.__network.connections:
+        for connection in self.__connections:
             print(connection)
 
     def getElementNames(self, ids: list[str]) -> str:

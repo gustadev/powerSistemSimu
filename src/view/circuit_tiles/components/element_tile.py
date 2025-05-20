@@ -1,10 +1,9 @@
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton
+from PySide6.QtWidgets import QWidget, QHBoxLayout
 
 from typing import Generic, Type, TypeVar
 
 from controllers.simulator_controller import SimulatorController
 from models.network_element import ElementEvent, NetworkElement
-from view.circuit_tiles.components.text_field import NotEmptyValidator, TextField
 
 
 E = TypeVar("E", bound=NetworkElement)
@@ -42,12 +41,11 @@ class ElementTile(Generic[E], QWidget):
 
         self.build_form(layout)
 
-        self.submit_button = QPushButton("Edit")
-        self.submit_button.clicked.connect(self.edit)
-        layout.addWidget(self.submit_button)
-
     def build_form(self, layout: QHBoxLayout):
         pass
 
-    def edit(self):
-        pass
+    def validate(self) -> bool:
+        raise NotImplementedError("validate method not implemented")
+
+    def save(self) -> None:
+        raise NotImplementedError("save method not implemented")
