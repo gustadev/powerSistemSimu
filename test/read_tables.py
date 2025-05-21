@@ -25,7 +25,7 @@ def __test_14_bus():
     v_sum: float = 0
     o_sum: float = 0
 
-    for index, bus in enumerate(power_flow.buses):
+    for index, bus in enumerate(power_flow.buses.values()):
         v_err: float = abs(bus.v - final_v[index])
         o_err: float = abs((bus.o - final_o[index] / 180 * np.pi))
         v_sum += v_err

@@ -160,41 +160,53 @@ def read_power_flow_from_ieee(path: str, base_mw: int = 100) -> PowerFlow:
     buses, lines = __read_data_ieee_cdf(path)
     powerFlow = PowerFlow(base_mw)
     for _, row in buses.iterrows():  # type: ignore
+        number: int = int(row["number"])  # type: ignore
         name: str = str(row["name"])  # type: ignore
         v: float = float(row["voltage"])  # type: ignore
         o: float = float(row["angle"]) * np.pi / 180  # type: ignore
-        load: complex = complex(row["p_load"], row["q_load"])  # type: ignore
-        generator: complex = complex(row["p_gen"], row["q_gen"])  # type: ignore
+        p_load: float = float(row["p_load"])  # type: ignore
+        q_load: float = float(row["q_load"])  # type: ignore
+        p_gen: float = float(row["p_gen"])  # type: ignore
+        q_gen: float = float(row["q_gen"])  # type: ignore
         q_min: float = float(row["q_min"])  # type: ignore
         q_max: float = float(row["q_max"])  # type: ignore
         bus_type: BusType = BusType(row["type"])  # type: ignore
         v_rated: float = float(row["v_rated"])  # type: ignore
-        shunt: complex = complex(row["shunt_g"], row["shunt_b"])  # type: ignore
+        g_shunt: float = float(row["shunt_g"])  # type: ignore
+        b_shunt: float = float(row["shunt_b"])  # type: ignore
 
         bus: Bus = Bus(
+            id=f"{number}b",
             name=name,
             v=v,
             o=o,
-            load=load,
-            generator=generator,
-            q_min=q_min if q_min != 0 else None,
-            q_max=q_max if q_max != 0 else None,
+            p_load=p_load,
+            q_load=q_load,
+            p_gen=p_gen,
+            q_gen=q_gen,
+            q_min=q_min if q_min != 0 else float("-inf"),
+            q_max=q_max if q_max != 0 else float("inf"),
             type=bus_type,
             v_rated=v_rated,
-            shunt=shunt,
+            b_shunt=b_shunt,
+            g_shunt=g_shunt,
         )
 
         powerFlow.add_bus(bus)
 
     for _, row in lines.iterrows():  # type: ignore
-        tapBus: int = int(row["tap_bus"]) - 1  # type: ignore
-        zBus: int = int(row["z_bus"]) - 1  # type: ignore
+        tapBus: int = int(row["tap_bus"])  # type: ignore
+        zBus: int = int(row["z_bus"])  # type: ignore
         bc: float = float(row["b"])  # type: ignore
         z: complex = complex(float(row["r"]), float(row["x"]))  # type: ignore
         tap: complex = complex(float(row["tap"])) if float(row["tap"]) != 0 else complex(1.0)  # type: ignore
 
         connection: BusConnection = BusConnection(
-            powerFlow.buses[tapBus], powerFlow.buses[zBus], z=z, bc=bc, tap=tap
+            powerFlow.buses[f"{tapBus}b"],
+            powerFlow.buses[f"{zBus}b"],
+            z=z,
+            bc=bc,
+            tap=tap,
         )
 
         powerFlow.add_connection(connection)
