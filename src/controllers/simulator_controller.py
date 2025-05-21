@@ -24,11 +24,10 @@ class SimulatorController:
     def listen(self, callback: Callable[[NetworkElement, ElementEvent], None]) -> None:
         self.__listeners.append(callback)
 
-    def addBus(self) -> Bus:
-        return cast(Bus, self.__add_element(Bus()))
+    def addBus(self, bus: Bus = Bus()) -> Bus:
+        return cast(Bus, self.__add_element(bus))
 
-    def addConnection(self, source: Bus, target: Bus) -> BusConnection:
-        line = BusConnection(source, target, y=complex(1))
+    def addConnection(self, line: BusConnection) -> BusConnection:
         return cast(BusConnection, self.__add_element(line))
 
     def __add_element(self, element: NetworkElement) -> NetworkElement:
@@ -64,8 +63,17 @@ class SimulatorController:
         raise ValueError(f"Connection with id {id} not found")
 
     def runPowerFlow(self):
-        # self.__network.solve()
-        pass
+        power_flow = PowerFlow()
+        for bus in self.__buses.values():
+            power_flow.add_bus(bus)
+        for connection in self.__connections.values():
+            power_flow.add_connection(connection)
+        power_flow.solve()
+
+        for bus in self.__buses.values():
+            for callback in self.__listeners:
+                callback(bus, ElementEvent.UPDATED)
+        
 
     def printNetwork(self):
         print("Network:")

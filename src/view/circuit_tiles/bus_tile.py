@@ -54,6 +54,20 @@ class BusTile(ElementTile[Bus]):
         )
         layout.addWidget(self.angleField)
 
+        # "p"
+        self.p_field = TextField[float](
+            type=float,
+            enabled=False,
+        )
+        layout.addWidget(self.p_field)
+
+        # "q"
+        self.q_field = TextField[float](
+            type=float,
+            enabled=False,
+        )
+        layout.addWidget(self.q_field)
+
         # "p_load"
         self.p_load = TextField[float](
             type=float,
@@ -127,6 +141,8 @@ class BusTile(ElementTile[Bus]):
             self.busTypeDropdown.setCurrentIndex(index)
         self.voltageField.setValue(self.element.v)
         self.angleField.setValue(self.element.o)
+        self.p_field.setValue(self.element.p)
+        self.q_field.setValue(self.element.q)
         if self.element.p_load != 0:
             self.p_load.setValue(self.element.p_load)
         else:

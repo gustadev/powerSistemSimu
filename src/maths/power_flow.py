@@ -9,10 +9,11 @@ from models.y_bus_square_matrix import YBusSquareMatrix
 
 
 class VariableIndex:
-    def __init__(self, variable: str, power: str, busIndex: int):
+    def __init__(self, variable: str, power: str, busIndex: int, busId: str):
         self.variable = variable
         self.power = power
         self.index = busIndex
+        self.busId = busId
 
     def __str__(self) -> str:
         return f"{self.variable}[{self.index + 1}]"
@@ -20,8 +21,8 @@ class VariableIndex:
 
 class PowerFlow:
     def __init__(self, base: float = 1):
-        self.buses: dict[int, Bus] = dict[int, Bus]()
-        self.connections: dict[int, BusConnection] = dict[int, BusConnection]()
+        self.buses = dict[str, Bus]()
+        self.connections = dict[str, BusConnection]()
         self.__yMatrix: YBusSquareMatrix = YBusSquareMatrix()
         self.indexes = list[VariableIndex]()
         self.base = base
@@ -37,14 +38,15 @@ class PowerFlow:
     def build_bus_matrix(self) -> YBusSquareMatrix:
         bus_matrix: YBusSquareMatrix = YBusSquareMatrix()
 
-        for bus in self.buses:
-            bus_matrix.add_bus(bus.shunt)
+        for index, bus in enumerate(self.buses.values()):
+            bus_matrix.add_bus(complex(bus.g_shunt, bus.b_shunt))
+            bus.index = index
 
-        for connection in self.connections:
+        for connection in self.connections.values():
             bus_matrix.connect_bus_to_bus(
                 y=connection.y,
-                source=connection.tap_bus_id,
-                target=connection.z_bus_id,
+                source=self.buses[connection.tap_bus_id].index,
+                target=self.buses[connection.z_bus_id].index,
                 bc=connection.bc,
                 tap=connection.tap,
             )
@@ -59,7 +61,7 @@ class PowerFlow:
         j: list[list[float]] = [[0 for _ in range(n)] for _ in range(n)]
         s_sch: list[float] = list[float]()
         for namedIndex in self.indexes:
-            bus = self.buses[namedIndex.index]
+            bus = self.buses[namedIndex.busId]
             if namedIndex.variable == "o" and (bus.type == BusType.PV or bus.type == BusType.PQ):
                 s_sch.append(bus.p_sch)
             elif namedIndex.variable == "v" and (bus.type == BusType.PV or bus.type == BusType.PQ):
@@ -68,8 +70,8 @@ class PowerFlow:
         for iteration in range(1, max_iterations + 1):
             print(f"\nIteration {iteration}:")
 
-            def getPowerResidues(busIndex: int, variable: str, power: str) -> float:
-                bus = self.buses[busIndex]
+            def getPowerResidues(bus_id: str, variable: str, power: str) -> float:
+                bus = self.buses[bus_id]
                 if power == "p" and (
                     bus.type.value == BusType.PV.value or bus.type.value == BusType.PQ.value
                 ):
@@ -82,8 +84,8 @@ class PowerFlow:
                     return q_sch - q_cal
                 return 0
 
-            def getJacobianElement(r: int, c: int, _: str, __: str, diff: str) -> float:
-                dSdX: Callable[[int, int, list[Bus], YBusSquareMatrix], float] = dPdO
+            def getJacobianElement(r_id: str, c_id: str, _: str, __: str, diff: str) -> float:
+                dSdX: Callable[[str, str, dict[str, Bus], YBusSquareMatrix], float] = dPdO
                 if diff == "∂p/∂o":
                     dSdX = dPdO
                 elif diff == "∂p/∂v":
@@ -92,7 +94,7 @@ class PowerFlow:
                     dSdX = dQdO
                 else:
                     dSdX = dQdV
-                return dSdX(i=r, j=c, buses=self.buses, Y=self.__yMatrix)
+                return dSdX(i_id=r_id, j_id=c_id, buses=self.buses, Y=self.__yMatrix)
 
             ds = self.__map_indexes_list(getPowerResidues)
             j = self.__map_indexes_matrix(getJacobianElement)
@@ -106,8 +108,8 @@ class PowerFlow:
             print(f"dX: {dX}")
 
             for i, namedIndex in enumerate(self.indexes):
-                busIndex = namedIndex.index
-                bus = self.buses[busIndex]
+                bus_id = namedIndex.busId
+                bus = self.buses[bus_id]
                 if namedIndex.variable == "o":
                     newO = bus.o + dX[i]
                     if newO > 2 * cmath.pi:
@@ -133,13 +135,13 @@ class PowerFlow:
                 print(f"|E| = {err}.  End.")
 
         print("\nPower flow solved.")
-        for bus in self.buses:
+        for bus in self.buses.values():
             bus.p = calcP(bus, self.buses, self.__yMatrix)
             bus.q = calcQ(bus, self.buses, self.__yMatrix)
             print(bus)
 
     def print_state(self):
-        for bus in self.buses:
+        for bus in self.buses.values():
             print(f"Bus: {bus.name}, V: {bus.v}, O: {bus.o}, P: {bus.p}, Q: {bus.q}")
 
     def transposeList(self, list: list[float]) -> list[list[float]]:
@@ -149,12 +151,18 @@ class PowerFlow:
         o_indexes: list[VariableIndex] = list[VariableIndex]()
         v_indexes: list[VariableIndex] = list[VariableIndex]()
 
-        for index, source in enumerate(self.buses):
+        for source in self.buses.values():
             if source.type is BusType.PQ:
-                o_indexes.append(VariableIndex(variable="o", power="p", busIndex=index))
-                v_indexes.append(VariableIndex(variable="v", power="q", busIndex=index))
+                o_indexes.append(
+                    VariableIndex(variable="o", power="p", busIndex=source.index, busId=source.id)
+                )
+                v_indexes.append(
+                    VariableIndex(variable="v", power="q", busIndex=source.index, busId=source.id)
+                )
             if source.type is BusType.PV:
-                o_indexes.append(VariableIndex(variable="o", power="p", busIndex=index))
+                o_indexes.append(
+                    VariableIndex(variable="o", power="p", busIndex=source.index, busId=source.id)
+                )
 
         self.indexes = o_indexes + v_indexes
 
@@ -172,13 +180,13 @@ class PowerFlow:
             )
 
     def __map_indexes_matrix(
-        self, x: Callable[[int, int, str, str, str], Any]  # row, column, variable, power, diff]
+        self, x: Callable[[str, str, str, str, str], Any]  # row, column, variable, power, diff]
     ) -> list[list[Any]]:
         return [
             [
                 x(
-                    row_index.index,
-                    column_index.index,
+                    row_index.busId,
+                    column_index.busId,
                     column_index.variable,
                     row_index.power,
                     f"∂{row_index.power}/∂{column_index.variable}",
@@ -189,6 +197,6 @@ class PowerFlow:
         ]
 
     def __map_indexes_list(
-        self, x: Callable[[int, str, str], Any]  # row, variable, power
+        self, x: Callable[[str, str, str], Any]  # row, variable, power
     ) -> list[Any]:
-        return [x(index.index, index.variable, index.power) for _, index in enumerate(self.indexes)]
+        return [x(index.busId, index.variable, index.power) for _, index in enumerate(self.indexes)]

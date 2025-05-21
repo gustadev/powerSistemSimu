@@ -90,10 +90,11 @@ class TextField(Generic[T], QWidget):
             text = self.field.text()
             if self.type == str:
                 return cast(T, text)
-            elif self.type == int:
+            elif self.type == int and len(text) > 0:
                 return cast(T, int(text))
-            elif self.type == float:
+            elif self.type == float and len(text) > 0:
                 return cast(T, float(text))
+            return None
         except:
             return None
 

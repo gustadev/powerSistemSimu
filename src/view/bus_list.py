@@ -45,6 +45,8 @@ class BusList(QWidget):
             "type",
             "v",
             "o",
+            "p",
+            "q",
             "p_load",
             "q_load",
             "p_gen",
