@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt
 
 
 from typing import Generic, Type, TypeVar
+from PySide6.QtGui import QFocusEvent
 
 
 class TextValidator:
@@ -77,7 +78,7 @@ class TextField(Generic[T], QWidget):
 
         orig_focus_out_event = self.field.focusOutEvent
 
-        def new_focus_out_event(event):
+        def new_focus_out_event(event: QFocusEvent):
             orig_focus_out_event(event)
             self.__on_click_outside()
 
