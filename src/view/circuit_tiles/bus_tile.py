@@ -25,6 +25,7 @@ class BusTile(ElementTile[Bus]):
         self.numberField = TextField[int](
             type=int,
             validators=[NotEmptyValidator(), NumberValidator()],
+            on_focus_out=self.save,
         )
         layout.addWidget(self.numberField)
 
@@ -32,6 +33,7 @@ class BusTile(ElementTile[Bus]):
         self.busTypeDropdown = QComboBox()
         # order: "Slack", "PV", "PQ" (adjust if needed)
         self.busTypeDropdown.addItems(["SLACK", "PV", "PQ"])
+        self.busTypeDropdown.currentIndexChanged.connect(self.save)
         layout.addWidget(self.busTypeDropdown)
 
         # "v"
@@ -39,6 +41,7 @@ class BusTile(ElementTile[Bus]):
             type=float,
             default_Value=1.0,
             validators=[NotEmptyValidator(), NumberValidator(min=0)],
+            on_focus_out=self.save,
         )
         layout.addWidget(self.voltageField)
 
@@ -47,6 +50,7 @@ class BusTile(ElementTile[Bus]):
             type=float,
             default_Value=0.0,
             validators=[NotEmptyValidator(), NumberValidator()],
+            on_focus_out=self.save,
         )
         layout.addWidget(self.angleField)
 
@@ -54,6 +58,7 @@ class BusTile(ElementTile[Bus]):
         self.p_load = TextField[float](
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
+            on_focus_out=self.save,
         )
         layout.addWidget(self.p_load)
 
@@ -61,6 +66,7 @@ class BusTile(ElementTile[Bus]):
         self.q_load = TextField[float](
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
+            on_focus_out=self.save,
         )
         layout.addWidget(self.q_load)
 
@@ -68,6 +74,7 @@ class BusTile(ElementTile[Bus]):
         self.p_gen = TextField[float](
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
+            on_focus_out=self.save,
         )
         layout.addWidget(self.p_gen)
 
@@ -75,6 +82,7 @@ class BusTile(ElementTile[Bus]):
         self.q_gen = TextField[float](
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
+            on_focus_out=self.save,
         )
         layout.addWidget(self.q_gen)
 
@@ -82,6 +90,7 @@ class BusTile(ElementTile[Bus]):
         self.q_min = TextField[float](
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
+            on_focus_out=self.save,
         )
         layout.addWidget(self.q_min)
 
@@ -89,6 +98,7 @@ class BusTile(ElementTile[Bus]):
         self.q_max = TextField[float](
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
+            on_focus_out=self.save,
         )
         layout.addWidget(self.q_max)
 
@@ -96,6 +106,7 @@ class BusTile(ElementTile[Bus]):
         self.shunt_b = TextField[float](
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
+            on_focus_out=self.save,
         )
         layout.addWidget(self.shunt_b)
 
@@ -103,6 +114,7 @@ class BusTile(ElementTile[Bus]):
         self.shunt_g = TextField[float](
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
+            on_focus_out=self.save,
         )
         layout.addWidget(self.shunt_g)
 
@@ -115,63 +127,63 @@ class BusTile(ElementTile[Bus]):
             self.busTypeDropdown.setCurrentIndex(index)
         self.voltageField.setValue(self.element.v)
         self.angleField.setValue(self.element.o)
-        if self.element.load and self.element.load.real != 0.0:
-            self.p_load.setValue(self.element.load.real)
+        if self.element.p_load != 0:
+            self.p_load.setValue(self.element.p_load)
         else:
             self.p_load.clearValue()
-        if self.element.load and self.element.load.imag != 0.0:
-            self.q_load.setValue(self.element.load.imag)
+        if self.element.q_load != 0:
+            self.q_load.setValue(self.element.q_load)
         else:
-            self.p_load.clearValue()
-        if self.element.generator and self.element.generator.real != 0.0:
-            self.p_gen.setValue(self.element.generator.real)
-        if self.element.generator and self.element.generator.imag != 0.0:
-            self.q_gen.setValue(self.element.generator.imag)
-        if self.element.q_min is not None and self.element.q_min != 0.0:
+            self.q_load.clearValue()
+        if self.element.p_gen != 0:
+            self.p_gen.setValue(self.element.p_gen)
+        else:
+            self.p_gen.clearValue()
+        if self.element.q_gen != 0:
+            self.q_gen.setValue(self.element.q_gen)
+        else:
+            self.q_gen.clearValue()
+        if self.element.q_min != float("-inf"):
             self.q_min.setValue(self.element.q_min)
-        if self.element.q_max is not None and self.element.q_max != 0.0:
+        else:
+            self.q_min.clearValue()
+        if self.element.q_max != float("inf"):
             self.q_max.setValue(self.element.q_max)
-        if self.element.shunt.real != 0.0:
-            self.shunt_b.setValue(self.element.shunt.real)
-        if self.element.shunt.imag != 0.0:
-            self.shunt_g.setValue(self.element.shunt.imag)
+        else:
+            self.q_max.clearValue()
+        if self.element.g_shunt != 0:
+            self.shunt_g.setValue(self.element.g_shunt)
+        else:
+            self.shunt_g.clearValue()
+        if self.element.b_shunt != 0:
+            self.shunt_b.setValue(self.element.b_shunt)
+        else:
+            self.shunt_b.clearValue()
+
         return
 
     def validate(self) -> bool:
         return True  # TODO implement validation
 
     def save(self) -> None:
-        name = self.nameField.getValue()
-        number = self.numberField.getValue()
-        bus_type = self.busTypeDropdown.currentText()
-        voltage = self.voltageField.getValue()
-        angle = self.angleField.getValue()
-        p_load = self.p_load.getValue()
-        q_load = self.q_load.getValue()
-        p_gen = self.p_gen.getValue()
-        q_gen = self.q_gen.getValue()
-        q_min = self.q_min.getValue()
-        q_max = self.q_max.getValue()
-        shunt_b = self.shunt_b.getValue()
-        shunt_g = self.shunt_g.getValue()
-        if name is None:
-            name = self.element.name
-        if number is None:
-            number = self.element.number
-        self.element.type = BusType[bus_type]
+        bus_type: BusType = BusType[self.busTypeDropdown.currentText()]
+
         SimulatorController.instance().updateElement(
             self.element.copy_with(
-                name=name,
-                number=number,
-                v=voltage,
-                o=angle,
-                load=complex(p_load if p_load else 0.0, q_load if q_load else 0.0),
-                generator=complex(p_gen if p_gen else 0.0, q_gen if q_gen else 0.0),
-                q_min=q_min if q_min else 0.0,
-                q_max=q_max if q_max else 0.0,
-                shunt=complex(shunt_b if shunt_b else 0.0, shunt_g if shunt_g else 0.0),
-                type=self.element.type,
-            ),
+                name=self.nameField.getValue(),
+                number=self.numberField.getValue(),
+                type=bus_type,
+                v=self.voltageField.getValue(),
+                o=self.angleField.getValue(),
+                p_load=self.p_load.getValue(),
+                q_load=self.q_load.getValue(),
+                p_gen=self.p_gen.getValue(),
+                q_gen=self.q_gen.getValue(),
+                q_min=self.q_min.getValue(),
+                q_max=self.q_max.getValue(),
+                g_shunt=self.shunt_g.getValue(),
+                b_shunt=self.shunt_b.getValue(),
+            )
         )
 
     def circuitListener(self, element: NetworkElement, event: ElementEvent):

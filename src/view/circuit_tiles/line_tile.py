@@ -40,6 +40,7 @@ class LineTile(ElementTile[BusConnection]):
             type=float,
             validators=[NotEmptyValidator(), NumberValidator(min=0)],
             default_Value=1.0,
+            on_focus_out=self.save,
         )
         layout.addWidget(self.resistanceField)
 
@@ -48,6 +49,7 @@ class LineTile(ElementTile[BusConnection]):
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
             default_Value=0.0,
+            on_focus_out=self.save,
         )
         layout.addWidget(self.reactanceField)
 
@@ -57,6 +59,7 @@ class LineTile(ElementTile[BusConnection]):
             validators=[NotEmptyValidator(), NumberValidator(min=0)],
             enabled=False,
             default_Value=1.0,
+            on_focus_out=self.save,
         )
         layout.addWidget(self.conductanceField)
 
@@ -66,6 +69,7 @@ class LineTile(ElementTile[BusConnection]):
             validators=[NotEmptyValidator(), NumberValidator()],
             enabled=False,
             default_Value=0.0,
+            on_focus_out=self.save,
         )
         layout.addWidget(self.susceptanceField)
 
@@ -74,6 +78,7 @@ class LineTile(ElementTile[BusConnection]):
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
             default_Value=0.0,
+            on_focus_out=self.save,
         )
         layout.addWidget(self.bcField)
 
@@ -82,6 +87,7 @@ class LineTile(ElementTile[BusConnection]):
             type=float,
             validators=[NotEmptyValidator(), NumberValidator()],
             default_Value=1.0,
+            on_focus_out=self.save,
         )
         layout.addWidget(self.tapField)
 

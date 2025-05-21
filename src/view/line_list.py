@@ -58,24 +58,6 @@ class LineList(QWidget):
         scroll_area.setWidget(container)
         self.layout().addWidget(scroll_area)
 
-        # Add the Save button outside the scrollable area, at the bottom
-        save_button = QPushButton("Save")
-        self.layout().addWidget(save_button)
-        self.layout().setContentsMargins(0, 0, 0, 0)
-
-        save_button.clicked.connect(self.save)
-
-    def save(self):
-        valid: bool = True
-        for tile in self.items.values():
-            if not tile.validate():
-                valid = False
-        if not valid:
-            return
-
-        for tile in self.items.values():
-            tile.save()
-
     def circuitListener(self, element: NetworkElement, event: ElementEvent):
         if event is ElementEvent.CREATED:
             tile = None

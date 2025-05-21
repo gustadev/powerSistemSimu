@@ -51,6 +51,7 @@ class TextField(Generic[T], QWidget):
         trailing: str = "",
         enabled: bool = True,
         validators: list[TextValidator] = [NotEmptyValidator()],
+        on_focus_out: Callable[[], None] | None = None,
     ):
         super().__init__()
         self.setEnabled(enabled)
@@ -81,6 +82,7 @@ class TextField(Generic[T], QWidget):
             self.__on_click_outside()
 
         self.field.focusOutEvent = new_focus_out_event
+        self.on_focus_out = on_focus_out
 
     def getValue(self) -> T | None:
         try:
@@ -109,13 +111,8 @@ class TextField(Generic[T], QWidget):
         return True
 
     def __on_click_outside(self):
-        value = self.getValue()
-        if value is None and self.default_Value is not None:
-            self.__set_value_string(self.default_Value)
-            return
-
-        if value:
-            self.__set_value_string(value)
+        if self.on_focus_out is not None:
+            self.on_focus_out()
 
     def __set_value_string(self, value: T) -> None:
         if self.type is float and isinstance(value, float):

@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QScrollArea,
     QFrame,
-    QPushButton,
 )
 from PySide6.QtCore import Qt
 
@@ -62,23 +61,6 @@ class BusList(QWidget):
         scroll_area.setWidget(container)
         self.layout().addWidget(scroll_area)
         self.layout().setContentsMargins(0, 0, 0, 0)
-
-        # Add the Save button outside the scrollable area, at the bottom
-        save_button = QPushButton("Save")
-        self.layout().addWidget(save_button)
-
-        save_button.clicked.connect(self.save)
-
-    def save(self):
-        valid: bool = True
-        for tile in self.items.values():
-            if not tile.validate():
-                valid = False
-        if not valid:
-            return
-
-        for tile in self.items.values():
-            tile.save()
 
     def circuitListener(self, element: NetworkElement, event: ElementEvent):
         if event is ElementEvent.CREATED:
