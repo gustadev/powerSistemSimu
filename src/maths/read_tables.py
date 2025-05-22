@@ -3,7 +3,7 @@ import numpy as np
 from typing import Any, Tuple
 
 from models.bus import Bus, BusType
-from models.connection import BusConnection
+from models.line import Line
 from maths.power_flow import PowerFlow
 
 
@@ -201,7 +201,7 @@ def read_power_flow_from_ieee(path: str, base_mw: int = 100) -> PowerFlow:
         z: complex = complex(float(row["r"]), float(row["x"]))  # type: ignore
         tap: complex = complex(float(row["tap"])) if float(row["tap"]) != 0 else complex(1.0)  # type: ignore
 
-        connection: BusConnection = BusConnection(
+        connection: Line = Line(
             powerFlow.buses[f"{tapBus}b"],
             powerFlow.buses[f"{zBus}b"],
             z=z,

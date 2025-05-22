@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPen
 
 from controllers.simulator_controller import SimulatorController
-from models.connection import BusConnection
+from models.line import Line
 
 
 class DraggableLinkSquare(QGraphicsRectItem):
@@ -52,6 +52,6 @@ class DraggableLinkSquare(QGraphicsRectItem):
             break
         if target:
             SimulatorController.instance().addConnection(
-                BusConnection(self.parent.bus.id, target.parent.bus.id, y=complex(1))
+                Line(self.parent.bus.id, target.parent.bus.id, y=complex(1))
             )
         event.accept()

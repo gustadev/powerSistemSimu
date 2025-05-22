@@ -3,7 +3,7 @@ from typing import Any, Callable
 import numpy
 
 from maths.power_calculator import calcP, calcQ, dPdO, dPdV, dQdO, dQdV
-from models.connection import BusConnection
+from models.line import Line
 from models.bus import Bus, BusType
 from models.y_bus_square_matrix import YBusSquareMatrix
 
@@ -22,7 +22,7 @@ class VariableIndex:
 class PowerFlow:
     def __init__(self, base: float = 1):
         self.buses = dict[str, Bus]()
-        self.connections = dict[str, BusConnection]()
+        self.connections = dict[str, Line]()
         self.__yMatrix: YBusSquareMatrix = YBusSquareMatrix()
         self.indexes = list[VariableIndex]()
         self.base = base
@@ -32,7 +32,7 @@ class PowerFlow:
         bus.index = len(self.buses) - 1
         return bus
 
-    def add_connection(self, connection: BusConnection) -> None:
+    def add_connection(self, connection: Line) -> None:
         self.connections[connection.id] = connection
 
     def build_bus_matrix(self) -> YBusSquareMatrix:

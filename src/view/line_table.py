@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
 )
 
 from controllers.simulator_controller import ElementEvent, SimulatorController
-from models.connection import BusConnection
+from models.line import Line
 from models.network_element import NetworkElement
 from view.line_table_row import LineTableRow
 
@@ -49,7 +49,7 @@ class LineTable(QWidget):
 
     def circuitListener(self, element: NetworkElement, event: ElementEvent):
         if event is ElementEvent.CREATED:
-            if isinstance(element, BusConnection):
+            if isinstance(element, Line):
                 row = self.table.rowCount()
                 self.table.insertRow(row)
                 bus_row = LineTableRow(element)

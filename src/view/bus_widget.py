@@ -13,21 +13,34 @@ from models.network_element import NetworkElement
 from view.draggable_link_square import DraggableLinkSquare
 
 
-class CircuitNodeWidget(QGraphicsRectItem):
+class BusWidget(QGraphicsRectItem):
     def __init__(self, x: float, y: float, bus: Bus):
         super().__init__(x, y, 50, 50)
-        self.bus = bus
+        self.bus: Bus = bus
         self.setBrush(Qt.GlobalColor.gray)
         self.setFlag(QGraphicsRectItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsRectItem.GraphicsItemFlag.ItemIsSelectable, True)
 
         self.link = DraggableLinkSquare(x + 50 / 2, y + 50 / 2, self)
 
-        self.label = QGraphicsSimpleTextItem(bus.name, parent=self)
+        self.label = QGraphicsSimpleTextItem(self.__label, parent=self)
         self.label.setPos(x + 5, y)
         SimulatorController.instance().listen(self.circuitListener)
 
     def circuitListener(self, node: NetworkElement, event: ElementEvent):
-        if event == ElementEvent.UPDATED and node.id == self.bus.id:
+        if event == ElementEvent.UPDATED and node.id == self.bus.id and isinstance(node, Bus):
             self.bus = node
-            self.label.setText(node.name)
+            self.label.setText(self.__label)
+
+    @property
+    def __label(self) -> str:
+        bus: Bus = self.bus
+        label: str = (
+            f"\n\n\n{bus.name}"
+            + f"\n{bus.type.name}"
+            + f"\nv={bus.v:.2f}"
+            + f"\no={bus.o:.2f}"
+            + f"\np={bus.p:.2f}"
+            + f"\nq={bus.q:.2f}"
+        )
+        return label
