@@ -7,11 +7,7 @@ from models.connection import BusConnection
 from models.network_element import ElementEvent, NetworkElement
 from view.circuit_tiles.components.element_tile import ElementTile
 from PySide6.QtWidgets import QComboBox
-from view.circuit_tiles.components.text_field import (
-    NotEmptyValidator,
-    NumberValidator,
-    TextField,
-)
+from view.circuit_tiles.components.text_field import TextField
 
 
 class LineTile(ElementTile[BusConnection]):
@@ -38,8 +34,6 @@ class LineTile(ElementTile[BusConnection]):
         # Field 4: "r" (float) – using (1/element.y).real if available
         self.resistanceField = TextField[float](
             type=float,
-            validators=[NotEmptyValidator(), NumberValidator(min=0)],
-            default_Value=1.0,
             on_focus_out=self.save,
         )
         layout.addWidget(self.resistanceField)
@@ -47,8 +41,6 @@ class LineTile(ElementTile[BusConnection]):
         # Field 5: "x" (float) – using (1/element.y).imag if available
         self.reactanceField = TextField[float](
             type=float,
-            validators=[NotEmptyValidator(), NumberValidator()],
-            default_Value=0.0,
             on_focus_out=self.save,
         )
         layout.addWidget(self.reactanceField)
@@ -56,7 +48,6 @@ class LineTile(ElementTile[BusConnection]):
         # Field 6: "g" (float)
         self.conductanceField = TextField[float](
             type=float,
-            validators=[NotEmptyValidator(), NumberValidator(min=0)],
             enabled=False,
             default_Value=1.0,
             on_focus_out=self.save,
@@ -66,7 +57,6 @@ class LineTile(ElementTile[BusConnection]):
         # Field 7: "b" (float)
         self.susceptanceField = TextField[float](
             type=float,
-            validators=[NotEmptyValidator(), NumberValidator()],
             enabled=False,
             default_Value=0.0,
             on_focus_out=self.save,
@@ -76,7 +66,6 @@ class LineTile(ElementTile[BusConnection]):
         # Field 8: "bc" (float)
         self.bcField = TextField[float](
             type=float,
-            validators=[NotEmptyValidator(), NumberValidator()],
             default_Value=0.0,
             on_focus_out=self.save,
         )
@@ -85,7 +74,6 @@ class LineTile(ElementTile[BusConnection]):
         # Field 9: "tap" (float)
         self.tapField = TextField[float](
             type=float,
-            validators=[NotEmptyValidator(), NumberValidator()],
             default_Value=1.0,
             on_focus_out=self.save,
         )

@@ -9,36 +9,6 @@ from typing import Generic, Type, TypeVar
 from PySide6.QtGui import QFocusEvent
 
 
-class TextValidator:
-    def validate(self, title: str, value: str) -> str | None:
-        pass
-
-
-class NotEmptyValidator(TextValidator):
-    def validate(self, title: str, value: str) -> str | None:
-        if not value.strip():
-            return f"{title} cannot be empty"
-        return None
-
-
-class NumberValidator(TextValidator):
-    def __init__(self, min: float | None = None, max: float | None = None):
-        self.min = min
-        self.max = max
-
-    def validate(self, title: str, value: str) -> str | None:
-        try:
-            number = float(value)
-            if self.min is not None and number < self.min:
-                return f"{title} must be greater than {self.min}"
-            if self.max is not None and number > self.max:
-                return f"{title} must be less than {self.max}"
-            return None
-
-        except ValueError:
-            return f"{title} must be a number"
-
-
 T = TypeVar("T", str, int, float)
 
 
@@ -51,7 +21,6 @@ class TextField(Generic[T], QWidget):
         type: Type[T] = str,
         trailing: str = "",
         enabled: bool = True,
-        validators: list[TextValidator] = [NotEmptyValidator()],
         on_focus_out: Callable[[], None] | None = None,
     ):
         super().__init__()
@@ -59,13 +28,10 @@ class TextField(Generic[T], QWidget):
         self.default_Value = default_Value
         self.title = title
         self.type = type
-        self.validators = validators
         self.field = QLineEdit()
-        # self.field.setFixedSize(QSize(50,30))
         if value is not None:
-            self.field.setText(str(value))
+            self.__set_value_string(value)
         self.label = QLabel(self.title)
-        # self.label.setFixedSize(QSize(50,30))
         layout = QHBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.label)
@@ -104,20 +70,15 @@ class TextField(Generic[T], QWidget):
     def clearValue(self):
         self.field.clear()
 
-    def validate(self) -> bool:
-        text = self.field.text()
-        for validator in self.validators:
-            result = validator.validate(title=self.title, value=text)
-            if result:
-                return False
-        return True
-
     def __on_click_outside(self):
         if self.on_focus_out is not None:
             self.on_focus_out()
 
     def __set_value_string(self, value: T) -> None:
         if self.type is float and isinstance(value, float):
-            self.field.setText(f"{value:8.4f}")
+            self.field.setText(f"{value:.4f}")
+        elif self.type is float and isinstance(value, int):
+            v = float(value)
+            self.field.setText(f"{v:.4f}")
         else:
             self.field.setText(str(value))
