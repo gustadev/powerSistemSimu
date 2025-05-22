@@ -24,7 +24,7 @@ class BusWidget(QGraphicsRectItem):
         self.link = DraggableLinkSquare(x + 50 / 2, y + 50 / 2, self)
 
         self.label = QGraphicsSimpleTextItem(self.__label, parent=self)
-        self.label.setPos(x + 5, y)
+        self.label.setPos(x, y + 50)
         SimulatorController.instance().listen(self.circuitListener)
 
     def circuitListener(self, node: NetworkElement, event: ElementEvent):
@@ -36,7 +36,7 @@ class BusWidget(QGraphicsRectItem):
     def __label(self) -> str:
         bus: Bus = self.bus
         label: str = (
-            f"\n\n\n{bus.name}"
+            f"{bus.name}"
             + f"\n{bus.type.name}"
             + f"\nv={bus.v:.2f}"
             + f"\no={bus.o:.2f}"

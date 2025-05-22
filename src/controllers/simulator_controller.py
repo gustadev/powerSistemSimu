@@ -32,8 +32,8 @@ class SimulatorController:
     def listen(self, callback: Callable[[NetworkElement, ElementEvent], None]) -> None:
         self.__listeners.append(callback)
 
-    def addBus(self, bus: Bus = Bus()) -> Bus:
-        return cast(Bus, self.__add_element(bus))
+    def addBus(self, bus: Bus | None = None) -> Bus:
+        return cast(Bus, self.__add_element(bus if bus else Bus()))
 
     def addConnection(self, line: Line) -> Line:
         return cast(Line, self.__add_element(line))

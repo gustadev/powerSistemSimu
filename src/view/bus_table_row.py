@@ -12,7 +12,7 @@ class BusTableRow:
         self.bus = bus
 
         # "name"
-        self.nameField = TextField(type=str)
+        self.nameField = TextField(type=str, on_focus_out=self.save)
 
         # "number"
         self.numberField = TextField[int](type=int, on_focus_out=self.save)
