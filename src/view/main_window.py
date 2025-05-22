@@ -4,10 +4,10 @@ from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QH
 
 from controllers.simulator_controller import SimulatorController
 from view.board_view import BoardView
-from view.bus_list import BusList
+from view.bus_table import BusTable
 from PySide6.QtWidgets import QSizePolicy
 
-from view.line_list import LineList
+from view.line_table import LineTable
 
 
 class MainWindow(QMainWindow):
@@ -80,7 +80,7 @@ class MainWindow(QMainWindow):
         centralWidget = QWidget()
         layout = QVBoxLayout(centralWidget)
 
-        rightWidget = BusList()
+        rightWidget = BusTable()
         rightWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         layout.addWidget(rightWidget)
@@ -98,7 +98,7 @@ class MainWindow(QMainWindow):
         centralWidget = QWidget()
         layout = QVBoxLayout(centralWidget)
 
-        rightWidget = LineList()
+        rightWidget = LineTable()
         rightWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         layout.addWidget(rightWidget)
