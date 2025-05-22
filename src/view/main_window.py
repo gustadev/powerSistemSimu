@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
         simulatorInstance = SimulatorController.instance()
 
         # Connect button signal to the board's addSquare method.
-        addBusButton.clicked.connect(simulatorInstance.addBus)
+        addBusButton.clicked.connect(lambda: simulatorInstance.addBus())
         runPowerFlowButton.clicked.connect(simulatorInstance.runPowerFlow)
         show_buses_button.clicked.connect(self.show_bus_window)
         show_lines_button.clicked.connect(self.show_line_window)
@@ -71,41 +71,34 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(centralWidget)
 
-        self.show_bus_window()
-        self.show_line_window()
-
     def show_bus_window(self):
-        self.networkWindow = QMainWindow()
-        self.networkWindow.setWindowTitle("Bus Table")
+        networkWindow = QMainWindow(parent=self)
+        networkWindow.setWindowTitle("Bus Table")
         centralWidget = QWidget()
         layout = QVBoxLayout(centralWidget)
+        layout.setContentsMargins(0, 0, 0, 0)
 
-        rightWidget = BusTable()
-        rightWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        busTable = BusTable()
+        busTable.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
-        layout.addWidget(rightWidget)
-        # horizontalLayout.setContentsMargins(5, 5, 5, 5)
+        layout.addWidget(busTable)
 
-        self.networkWindow.setCentralWidget(centralWidget)
-        self.networkWindow.resize(800, 600)
-        self.networkWindow.show()
-
-        pass
+        networkWindow.setCentralWidget(centralWidget)
+        networkWindow.resize(800, 600)
+        networkWindow.show()
 
     def show_line_window(self):
-        self.lineWindow = QMainWindow()
-        self.lineWindow.setWindowTitle("Line Table")
+        lineWindow = QMainWindow(parent=self)
+        lineWindow.setWindowTitle("Line Table")
         centralWidget = QWidget()
         layout = QVBoxLayout(centralWidget)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         rightWidget = LineTable()
-        rightWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        rightWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
         layout.addWidget(rightWidget)
-        # horizontalLayout.setContentsMargins(5, 5, 5, 5)
 
-        self.lineWindow.setCentralWidget(centralWidget)
-        self.lineWindow.resize(800, 600)
-        self.lineWindow.show()
-
-        pass
+        lineWindow.setCentralWidget(centralWidget)
+        lineWindow.resize(800, 600)
+        lineWindow.show()

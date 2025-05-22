@@ -38,6 +38,14 @@ class LineTable(QWidget):
         layout.addWidget(self.table)
 
         self.items: dict[str, Tuple[LineTableRow, int]] = {}
+        for line in self.simulatorInstance.connections:
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+            line_row = LineTableRow(line)
+            widgets = line_row.get_widgets()
+            for col, widget in enumerate(widgets):
+                self.table.setCellWidget(row, col, widget)
+            self.items[line.id] = (line_row, row)
 
     def circuitListener(self, element: NetworkElement, event: ElementEvent):
         if event is ElementEvent.CREATED:

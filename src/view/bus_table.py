@@ -43,6 +43,14 @@ class BusTable(QWidget):
         layout.addWidget(self.table)
 
         self.items: dict[str, Tuple[BusTableRow, int]] = {}
+        for bus in self.simulatorInstance.buses:
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+            bus_row = BusTableRow(bus)
+            widgets = bus_row.get_widgets()
+            for col, widget in enumerate(widgets):
+                self.table.setCellWidget(row, col, widget)
+            self.items[bus.id] = (bus_row, row)
 
     def circuitListener(self, element: NetworkElement, event: ElementEvent):
         if event is ElementEvent.CREATED:

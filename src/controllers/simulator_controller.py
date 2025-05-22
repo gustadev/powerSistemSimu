@@ -16,6 +16,14 @@ class SimulatorController:
             SimulatorController.__instance = SimulatorController()
         return SimulatorController.__instance
 
+    @property
+    def buses(self) -> list[Bus]:
+        return list(self.__buses.values())
+
+    @property
+    def connections(self) -> list[BusConnection]:
+        return list(self.__connections.values())
+
     def __init__(self):
         self.__buses = dict[str, Bus]()
         self.__connections = dict[str, BusConnection]()
@@ -73,7 +81,6 @@ class SimulatorController:
         for bus in self.__buses.values():
             for callback in self.__listeners:
                 callback(bus, ElementEvent.UPDATED)
-        
 
     def printNetwork(self):
         print("Network:")
