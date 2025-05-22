@@ -1,7 +1,7 @@
 from cmath import pi, sqrt
 
 from models.bus import Bus, BusType
-from models.connection import BusConnection
+from models.line import Line
 from maths.power_flow import PowerFlow
 
 degToRad: float = pi / 180
@@ -15,9 +15,9 @@ def class_example():
     bus2 = powerFlow.add_bus(Bus(name="Load", p_load=4, q_load=2.5, type=BusType.PQ))
     bus3 = powerFlow.add_bus(Bus(name="Generator", v=1.04, p_gen=2, type=BusType.PV))
 
-    powerFlow.add_connection(BusConnection(bus1, bus2, z=complex(0.02, 0.04)))
-    powerFlow.add_connection(BusConnection(bus2, bus3, z=complex(0.0125, 0.025)))
-    powerFlow.add_connection(BusConnection(bus3, bus1, z=complex(0.01, 0.03)))
+    powerFlow.add_connection(Line(bus1, bus2, z=complex(0.02, 0.04)))
+    powerFlow.add_connection(Line(bus2, bus3, z=complex(0.0125, 0.025)))
+    powerFlow.add_connection(Line(bus3, bus1, z=complex(0.01, 0.03)))
 
     Y = powerFlow.build_bus_matrix()
     print(f"Y=\n{Y.y_matrix}\n")
@@ -172,26 +172,26 @@ def example_14_buses():
             type=BusType.PQ,
         ),
     )
-    powerFlow.add_connection(BusConnection(bus1, bus2, z=complex(0.01938, 0.05917), bc=0.0528))
-    powerFlow.add_connection(BusConnection(bus1, bus5, z=complex(0.05403, 0.22304), bc=0.0492))
-    powerFlow.add_connection(BusConnection(bus2, bus3, z=complex(0.04699, 0.19797), bc=0.0438))
-    powerFlow.add_connection(BusConnection(bus2, bus4, z=complex(0.05811, 0.17632), bc=0.034))
-    powerFlow.add_connection(BusConnection(bus2, bus5, z=complex(0.05695, 0.17388), bc=0.0346))
-    powerFlow.add_connection(BusConnection(bus3, bus4, z=complex(0.06701, 0.17103), bc=0.0128))
-    powerFlow.add_connection(BusConnection(bus4, bus5, z=complex(0.01335, 0.04211)))
-    powerFlow.add_connection(BusConnection(bus4, bus7, z=complex(0, 0.20912), tap=0.978))
-    powerFlow.add_connection(BusConnection(bus4, bus9, z=complex(0, 0.55618), tap=0.969))
-    powerFlow.add_connection(BusConnection(bus5, bus6, z=complex(0, 0.25202), tap=0.932))
-    powerFlow.add_connection(BusConnection(bus6, bus11, z=complex(0.09498, 0.1989)))
-    powerFlow.add_connection(BusConnection(bus6, bus12, z=complex(0.12291, 0.25581)))
-    powerFlow.add_connection(BusConnection(bus6, bus13, z=complex(0.06615, 0.13027)))
-    powerFlow.add_connection(BusConnection(bus7, bus8, z=complex(0, 0.17615)))
-    powerFlow.add_connection(BusConnection(bus7, bus9, z=complex(0, 0.11001)))
-    powerFlow.add_connection(BusConnection(bus9, bus10, z=complex(0.03181, 0.0845)))
-    powerFlow.add_connection(BusConnection(bus9, bus14, z=complex(0.12711, 0.27038)))
-    powerFlow.add_connection(BusConnection(bus10, bus11, z=complex(0.08205, 0.19207)))
-    powerFlow.add_connection(BusConnection(bus12, bus13, z=complex(0.22092, 0.19988)))
-    powerFlow.add_connection(BusConnection(bus13, bus14, z=complex(0.17093, 0.34802)))
+    powerFlow.add_connection(Line(bus1, bus2, z=complex(0.01938, 0.05917), bc=0.0528))
+    powerFlow.add_connection(Line(bus1, bus5, z=complex(0.05403, 0.22304), bc=0.0492))
+    powerFlow.add_connection(Line(bus2, bus3, z=complex(0.04699, 0.19797), bc=0.0438))
+    powerFlow.add_connection(Line(bus2, bus4, z=complex(0.05811, 0.17632), bc=0.034))
+    powerFlow.add_connection(Line(bus2, bus5, z=complex(0.05695, 0.17388), bc=0.0346))
+    powerFlow.add_connection(Line(bus3, bus4, z=complex(0.06701, 0.17103), bc=0.0128))
+    powerFlow.add_connection(Line(bus4, bus5, z=complex(0.01335, 0.04211)))
+    powerFlow.add_connection(Line(bus4, bus7, z=complex(0, 0.20912), tap=0.978))
+    powerFlow.add_connection(Line(bus4, bus9, z=complex(0, 0.55618), tap=0.969))
+    powerFlow.add_connection(Line(bus5, bus6, z=complex(0, 0.25202), tap=0.932))
+    powerFlow.add_connection(Line(bus6, bus11, z=complex(0.09498, 0.1989)))
+    powerFlow.add_connection(Line(bus6, bus12, z=complex(0.12291, 0.25581)))
+    powerFlow.add_connection(Line(bus6, bus13, z=complex(0.06615, 0.13027)))
+    powerFlow.add_connection(Line(bus7, bus8, z=complex(0, 0.17615)))
+    powerFlow.add_connection(Line(bus7, bus9, z=complex(0, 0.11001)))
+    powerFlow.add_connection(Line(bus9, bus10, z=complex(0.03181, 0.0845)))
+    powerFlow.add_connection(Line(bus9, bus14, z=complex(0.12711, 0.27038)))
+    powerFlow.add_connection(Line(bus10, bus11, z=complex(0.08205, 0.19207)))
+    powerFlow.add_connection(Line(bus12, bus13, z=complex(0.22092, 0.19988)))
+    powerFlow.add_connection(Line(bus13, bus14, z=complex(0.17093, 0.34802)))
 
     powerFlow.solve(max_error=10000000, max_iterations=10)
     v_err = 0
@@ -216,11 +216,11 @@ def four_bus_example():
     bus3 = powerFlow.add_bus(Bus(name="Load 2", p_load=1, q_load=-0.5, type=BusType.PQ))
     bus4 = powerFlow.add_bus(Bus(name="Load 3", p_load=0.3, q_load=0.1, type=BusType.PQ))
 
-    powerFlow.add_connection(BusConnection(bus1, bus2, z=complex(0.05, 0.15)))
-    powerFlow.add_connection(BusConnection(bus1, bus3, z=complex(0.10, 0.30)))
-    powerFlow.add_connection(BusConnection(bus2, bus3, z=complex(0.15, 0.45)))
-    powerFlow.add_connection(BusConnection(bus2, bus4, z=complex(0.10, 0.30)))
-    powerFlow.add_connection(BusConnection(bus3, bus4, z=complex(0.05, 0.15)))
+    powerFlow.add_connection(Line(bus1, bus2, z=complex(0.05, 0.15)))
+    powerFlow.add_connection(Line(bus1, bus3, z=complex(0.10, 0.30)))
+    powerFlow.add_connection(Line(bus2, bus3, z=complex(0.15, 0.45)))
+    powerFlow.add_connection(Line(bus2, bus4, z=complex(0.10, 0.30)))
+    powerFlow.add_connection(Line(bus3, bus4, z=complex(0.05, 0.15)))
 
     y_matrix = powerFlow.build_bus_matrix().y_matrix
     print(f"Y=\n{y_matrix}\n")
@@ -251,9 +251,9 @@ def tap_tranformer_example():
     def parallel(z1: complex, z2: complex) -> complex:
         return 1 / (1 / z1 + 1 / z2)
 
-    pf.add_connection(BusConnection(bus1, bus3, z=complex(0, 0.0125), tap=0.8))
-    pf.add_connection(BusConnection(bus4, bus2, z=complex(0, 0.16), tap=1.25))
-    pf.add_connection(BusConnection(bus4, bus3, z=parallel(complex(0, 0.25), complex(0, 0.2))))
+    pf.add_connection(Line(bus1, bus3, z=complex(0, 0.0125), tap=0.8))
+    pf.add_connection(Line(bus4, bus2, z=complex(0, 0.16), tap=1.25))
+    pf.add_connection(Line(bus4, bus3, z=parallel(complex(0, 0.25), complex(0, 0.2))))
 
     y_matrix = pf.build_bus_matrix().y_matrix
     print(y_matrix)

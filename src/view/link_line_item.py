@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QGraphicsSimpleTextItem
 from PySide6.QtGui import QPen
 
 from controllers.simulator_controller import ElementEvent, SimulatorController
-from models.connection import BusConnection
+from models.line import Line
 from models.network_element import NetworkElement
 
 
@@ -16,21 +16,21 @@ class LinkLineItem(QGraphicsLineItem):
         self,
         sourceNodeDraggableLink,
         targetNodeDraggableLink,
-        connection: BusConnection,
+        line: Line,
     ):
         super().__init__()
         self.sourceNodeDraggableLink = sourceNodeDraggableLink
         self.targetNodeDraggableLink = targetNodeDraggableLink
         self.setPen(QPen(Qt.blue, 1))
         self.setZValue(0)
-        self.connection: BusConnection = connection
+        self.__line: Line = line
         self.nameLabel = None
         self.center = None
-        if isinstance(connection, BusConnection):
-            self.nameLabel = QGraphicsSimpleTextItem(connection.name)
-            self.nameLabel.setBrush(Qt.white)
-            self.nameLabel.setParentItem(self)
-            SimulatorController.instance().listen(self.circuitListener)
+
+        self.nameLabel = QGraphicsSimpleTextItem(self.__label)
+        self.nameLabel.setBrush(Qt.red)
+        self.nameLabel.setParentItem(self)
+        SimulatorController.instance().listen(self.circuitListener)
 
     def updatePosition(self):
         p1 = self.sourceNodeDraggableLink.sceneBoundingRect().center()
@@ -45,6 +45,19 @@ class LinkLineItem(QGraphicsLineItem):
         super().paint(painter, option, widget)
 
     def circuitListener(self, element: NetworkElement, event: ElementEvent):
-        if event == ElementEvent.UPDATED and self.connection.id == element.id:
-            self.connection = element
-            self.nameLabel.setText(element.name)
+        if (
+            event == ElementEvent.UPDATED
+            and self.__line.id == element.id
+            and isinstance(element, Line)
+        ):
+            self.__line = element
+            self.nameLabel.setText(self.__label)
+
+    @property
+    def __label(self) -> str:
+        label: str = f"y={self.__line.y:.2f}"
+        if self.__line.bc != 0:
+            label += f" \nbc=j{self.__line.bc:.2f}"
+        if self.__line.tap != 1:
+            label += f" \ntap={self.__line.tap:.2f}:1"
+        return label

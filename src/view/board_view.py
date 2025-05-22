@@ -8,9 +8,9 @@ from PySide6.QtCore import QRectF
 
 from controllers.simulator_controller import ElementEvent, SimulatorController
 from models.bus import Bus
-from models.connection import BusConnection
+from models.line import Line
 from models.network_element import NetworkElement
-from view.circuit_node_widget import CircuitNodeWidget
+from view.bus_widget import BusWidget
 from view.link_line_item import LinkLineItem
 
 
@@ -49,14 +49,14 @@ class BoardView(QGraphicsView):
     def circuitListener(self, element: NetworkElement, event: ElementEvent):
         # Adds node component to the board
         if event is ElementEvent.CREATED and isinstance(element, Bus):
-            widget = CircuitNodeWidget(50, 50, element)
+            widget = BusWidget(50, 50, element)
             self.scene().addItem(widget)
             self.simulator_widgets[element.id] = widget
             return
 
         # Adds line between two components in the board
         # TODO bug: somethimes not creating wire or TL when there is a block selected
-        if event is ElementEvent.CREATED and isinstance(element, BusConnection):
+        if event is ElementEvent.CREATED and isinstance(element, Line):
             sourceWidget = self.simulator_widgets[element.tap_bus_id].link
             targetWidget = self.simulator_widgets[element.z_bus_id].link
             self.scene().addItem(LinkLineItem(sourceWidget, targetWidget, element))

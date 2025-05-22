@@ -2,7 +2,7 @@ from typing import Callable
 
 from maths.power_flow import PowerFlow
 from models.bus import Bus
-from models.connection import BusConnection
+from models.line import Line
 from models.network_element import ElementEvent, NetworkElement
 from typing import cast
 
@@ -16,9 +16,17 @@ class SimulatorController:
             SimulatorController.__instance = SimulatorController()
         return SimulatorController.__instance
 
+    @property
+    def buses(self) -> list[Bus]:
+        return list(self.__buses.values())
+
+    @property
+    def connections(self) -> list[Line]:
+        return list(self.__connections.values())
+
     def __init__(self):
         self.__buses = dict[str, Bus]()
-        self.__connections = dict[str, BusConnection]()
+        self.__connections = dict[str, Line]()
         self.__listeners: list[Callable[[NetworkElement, ElementEvent], None]] = []
 
     def listen(self, callback: Callable[[NetworkElement, ElementEvent], None]) -> None:
@@ -27,13 +35,13 @@ class SimulatorController:
     def addBus(self, bus: Bus = Bus()) -> Bus:
         return cast(Bus, self.__add_element(bus))
 
-    def addConnection(self, line: BusConnection) -> BusConnection:
-        return cast(BusConnection, self.__add_element(line))
+    def addConnection(self, line: Line) -> Line:
+        return cast(Line, self.__add_element(line))
 
     def __add_element(self, element: NetworkElement) -> NetworkElement:
         if isinstance(element, Bus):
             self.__buses[element.id] = element
-        elif isinstance(element, BusConnection):
+        elif isinstance(element, Line):
             self.__connections[element.id] = element
 
         for callback in self.__listeners:
@@ -44,7 +52,7 @@ class SimulatorController:
     def updateElement(self, element: NetworkElement) -> None:
         if element.id in self.__buses and isinstance(element, Bus):
             self.__buses[element.id] = element
-        elif element.id in self.__connections and isinstance(element, BusConnection):
+        elif element.id in self.__connections and isinstance(element, Line):
             self.__connections[element.id] = element
         else:
             return
@@ -57,7 +65,7 @@ class SimulatorController:
             return self.__buses[id]
         raise ValueError(f"Bus with id {id} not found")
 
-    def get_connection_by_id(self, id: str) -> BusConnection:
+    def get_connection_by_id(self, id: str) -> Line:
         if id in self.__connections:
             return self.__connections[id]
         raise ValueError(f"Connection with id {id} not found")
@@ -73,7 +81,6 @@ class SimulatorController:
         for bus in self.__buses.values():
             for callback in self.__listeners:
                 callback(bus, ElementEvent.UPDATED)
-        
 
     def printNetwork(self):
         print("Network:")
