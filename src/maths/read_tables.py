@@ -199,9 +199,9 @@ def read_power_flow_from_ieee(path: str, base_mw: int = 100) -> PowerFlow:
         zBus: int = int(row["z_bus"])  # type: ignore
         bc: float = float(row["b"])  # type: ignore
         z: complex = complex(float(row["r"]), float(row["x"]))  # type: ignore
-        tap: complex = complex(float(row["tap"])) if float(row["tap"]) != 0 else complex(1.0)  # type: ignore
+        tap: float = float(row["tap"]) if float(row["tap"]) != 0 else 1.0  # type: ignore
 
-        connection: Line = Line(
+        connection: Line = Line.from_z(
             powerFlow.buses[f"{tapBus}b"],
             powerFlow.buses[f"{zBus}b"],
             z=z,
