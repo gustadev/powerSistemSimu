@@ -101,8 +101,14 @@ class LineTableRow:
         self.x.setValue(z.imag)
         self.g.setValue(self.line.g)
         self.b.setValue(self.line.b)
-        self.bc.setValue(self.line.bc)
-        self.tap.setValue(self.line.tap)
+        if self.line.bc != 0.0:
+            self.bc.setValue(self.line.bc)
+        else:
+            self.bc.clearValue()
+        if self.line.tap != 1.0:
+            self.tap.setValue(self.line.tap)
+        else:
+            self.tap.clearValue()
 
     def circuitListener(self, element: NetworkElement, event: ElementEvent):
         if (
