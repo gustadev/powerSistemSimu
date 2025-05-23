@@ -22,6 +22,15 @@ class MainWindow(QMainWindow):
         top_row.setAlignment(Qt.AlignmentFlag.AlignLeft)
         bottom_row.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
+        importFileButton = QPushButton("Import")
+        importFileButton.setFixedSize(70, 30)
+
+        expoerFileButton = QPushButton("Export")
+        expoerFileButton.setFixedSize(70, 30)
+
+        importIeeeFileButton = QPushButton("Import IEEE")
+        importIeeeFileButton.setFixedSize(120, 30)
+
         clearStateButton = QPushButton("Clear All")
         clearStateButton.setFixedSize(70, 30)
         clearStateButton.setIconSize(QSize(70, 30))
@@ -59,13 +68,19 @@ class MainWindow(QMainWindow):
         show_buses_button.clicked.connect(self.show_bus_window)
         show_lines_button.clicked.connect(self.show_line_window)
         clearStateButton.clicked.connect(simulatorInstance.clear_state)
+        importFileButton.clicked.connect(board.import_json)
+        expoerFileButton.clicked.connect(board.export_json)
+        importIeeeFileButton.clicked.connect(board.import_ieee)
 
         # Add widgets to the layout.
+        top_row.addWidget(importFileButton)
+        top_row.addWidget(expoerFileButton)
+        top_row.addWidget(importIeeeFileButton)
         top_row.addWidget(clearStateButton)
-        top_row.addWidget(addBusButton)
 
         # Create a horizontal layout to place the board view on the left and a new widget on the right.
 
+        bottom_row.addWidget(addBusButton)
         bottom_row.addWidget(show_buses_button)
         bottom_row.addWidget(show_lines_button)
         bottom_row.addWidget(show_y_bar_matrix_button)
