@@ -21,7 +21,7 @@ def __read_data_ieee_cdf(path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     buses = list[Any]()
     for raw_row in buses_:
         parsed_row = list[str | float]()
-        parsed_row.append(str(raw_row[0:4]).strip())  # Columns  1- 4   Bus number (I) *
+        parsed_row.append(int(raw_row[0:4]))  # Columns  1- 4   Bus number (I) *
         parsed_row.append(str(raw_row[5:17]).strip())  # Columns  7-17   Name (A) (left justify) *
         # bar.append(str(b[18:20]).strip()) # Columns 19-20   Load flow area number (I) Don't use zero! *
         # bar.append(str(b[20:23]).strip())  # Columns 21-23   Loss zone number (I)
@@ -178,6 +178,7 @@ def read_power_flow_from_ieee(path: str, base_mw: int = 100) -> PowerFlow:
         bus: Bus = Bus(
             id=f"{number}b",
             name=name,
+            number=number,
             v=v,
             o=o,
             p_load=p_load,
