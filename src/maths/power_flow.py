@@ -101,12 +101,6 @@ class PowerFlow:
 
             dX = numpy.dot(numpy.linalg.inv(j), ds)
 
-            print("J: ")
-            for row in j:
-                print("  [" + ", ".join(f"{item:10.4f}" for item in row) + "]")
-
-            print(f"dX: {dX}")
-
             for i, namedIndex in enumerate(self.indexes):
                 bus_id = namedIndex.busId
                 bus = self.buses[bus_id]
