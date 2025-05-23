@@ -22,6 +22,10 @@ class MainWindow(QMainWindow):
         top_row.setAlignment(Qt.AlignmentFlag.AlignLeft)
         bottom_row.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
+        clearStateButton = QPushButton("Clear All")
+        clearStateButton.setFixedSize(70, 30)
+        clearStateButton.setIconSize(QSize(70, 30))
+
         addBusButton = QPushButton("Add Bus")
         addBusButton.setFixedSize(70, 30)
         addBusButton.setIconSize(QSize(70, 30))
@@ -54,8 +58,10 @@ class MainWindow(QMainWindow):
         runPowerFlowButton.clicked.connect(simulatorInstance.runPowerFlow)
         show_buses_button.clicked.connect(self.show_bus_window)
         show_lines_button.clicked.connect(self.show_line_window)
+        clearStateButton.clicked.connect(simulatorInstance.clear_state)
 
         # Add widgets to the layout.
+        top_row.addWidget(clearStateButton)
         top_row.addWidget(addBusButton)
 
         # Create a horizontal layout to place the board view on the left and a new widget on the right.

@@ -16,6 +16,16 @@ class SimulatorController:
             SimulatorController.__instance = SimulatorController()
         return SimulatorController.__instance
 
+    def clear_state(self):
+        for bus in self.__buses.values():
+            for listener in self.__listeners:
+                listener(bus, ElementEvent.DELETED)
+        for connection in self.__connections.values():
+            for listener in self.__listeners:
+                listener(connection, ElementEvent.DELETED)
+        self.__buses.clear()
+        self.__connections.clear()
+
     @property
     def buses(self) -> list[Bus]:
         return list(self.__buses.values())

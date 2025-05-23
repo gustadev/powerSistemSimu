@@ -1,4 +1,3 @@
-import PySide6
 from PySide6.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
@@ -59,7 +58,15 @@ class BoardView(QGraphicsView):
         if event is ElementEvent.CREATED and isinstance(element, Line):
             sourceWidget = self.simulator_widgets[element.tap_bus_id].link
             targetWidget = self.simulator_widgets[element.z_bus_id].link
-            self.scene().addItem(LinkLineItem(sourceWidget, targetWidget, element))
+            line = LinkLineItem(sourceWidget, targetWidget, element)
+            self.scene().addItem(line)
+            self.simulator_widgets[element.id] = line
+            return
+
+        if event is ElementEvent.DELETED:
+            widget = self.simulator_widgets[element.id]
+            self.scene().removeItem(widget)
+            del self.simulator_widgets[element.id]
             return
 
     # TODO handle deletion. must sync with simulator state
