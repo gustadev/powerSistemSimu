@@ -1,5 +1,4 @@
 from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QHBoxLayout
 
 from controllers.simulator_controller import SimulatorController
@@ -16,23 +15,15 @@ class MainWindow(QMainWindow):
         centralWidget = QWidget()
         self.setWindowTitle("Power Systems Simulator - Board")
         # Layout creation
-        layoutBtnElements = QHBoxLayout()
-        layoutBtnActions = QHBoxLayout()
-        horizontalLayout = QHBoxLayout()
+        top_row = QHBoxLayout()
+        bottom_row = QHBoxLayout()
 
         # Layout Alignment configuration
-        layoutBtnElements.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        layoutBtnActions.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        top_row.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        bottom_row.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
-        # Screen montage
-        layout = QVBoxLayout(centralWidget)
-        layout.addLayout(layoutBtnElements)
-        layout.addLayout(horizontalLayout)
-        layout.addLayout(layoutBtnActions)
-
-        addBusButton = QPushButton("")  # ("Add Bus")
-        addBusButton.setFixedSize(60, 35)
-        addBusButton.setIcon(QIcon("assets/ico/busbar.png"))
+        addBusButton = QPushButton("Add Bus")
+        addBusButton.setFixedSize(70, 30)
         addBusButton.setIconSize(QSize(70, 30))
 
         show_buses_button = QPushButton("Buses")
@@ -50,6 +41,12 @@ class MainWindow(QMainWindow):
         # Create the board view.
         board = BoardView()
 
+        # Screen montage
+        column = QVBoxLayout(centralWidget)
+        column.addLayout(top_row)
+        column.addWidget(board)
+        column.addLayout(bottom_row)
+
         simulatorInstance = SimulatorController.instance()
 
         # Connect button signal to the board's addSquare method.
@@ -59,15 +56,14 @@ class MainWindow(QMainWindow):
         show_lines_button.clicked.connect(self.show_line_window)
 
         # Add widgets to the layout.
-        layoutBtnElements.addWidget(addBusButton)
-        layoutBtnElements.addWidget(board)
+        top_row.addWidget(addBusButton)
 
         # Create a horizontal layout to place the board view on the left and a new widget on the right.
 
-        layoutBtnActions.addWidget(show_buses_button)
-        layoutBtnActions.addWidget(show_lines_button)
-        layoutBtnActions.addWidget(show_y_bar_matrix_button)
-        layoutBtnActions.addWidget(runPowerFlowButton)
+        bottom_row.addWidget(show_buses_button)
+        bottom_row.addWidget(show_lines_button)
+        bottom_row.addWidget(show_y_bar_matrix_button)
+        bottom_row.addWidget(runPowerFlowButton)
 
         self.setCentralWidget(centralWidget)
 
