@@ -28,6 +28,7 @@ class SimulatorController:
         self.__buses = dict[str, Bus]()
         self.__connections = dict[str, Line]()
         self.__listeners: list[Callable[[NetworkElement, ElementEvent], None]] = []
+        self.__results: str = "Results!!"
 
     def listen(self, callback: Callable[[NetworkElement, ElementEvent], None]) -> None:
         self.__listeners.append(callback)
@@ -69,7 +70,10 @@ class SimulatorController:
         if id in self.__connections:
             return self.__connections[id]
         raise ValueError(f"Connection with id {id} not found")
-
+    def get_results(self) -> str:
+        return self.__results
+    def clear_results(self):
+        self.__results = ""
     def runPowerFlow(self):
         power_flow = PowerFlow()
         for bus in self.__buses.values():

@@ -25,6 +25,34 @@ class BoardView(QGraphicsView):
         self.simulator_widgets = dict()
         simulatorInstance = SimulatorController.instance()
         simulatorInstance.listen(self.circuitListener)
+    
+     # Variáveis para panning
+        self._panning = False
+        self._pan_start = None
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.MiddleButton:
+            self._panning = True
+            self._pan_start = event.pos()
+            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+        else:
+            super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self._panning and self._pan_start:
+            delta = event.pos() - self._pan_start
+            self._pan_start = event.pos()
+            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta.x())
+            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta.y())
+        else:
+            super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.MiddleButton:
+            self._panning = False
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+        else:
+            super().mouseReleaseEvent(event)
 
     def drawBackground(self, painter: QPainter, rect: QRectF):
         painter.setPen(Qt.GlobalColor.lightGray)

@@ -20,14 +20,14 @@ def main():
     window.resize(640, 480)
     window.show()
 
-    # instance: SimulatorController = SimulatorController.instance()
-    # bus1 = instance.addBus(Bus(name="Slack Bus", v=1.05, type=BusType.SLACK))
-    # bus2 = instance.addBus(Bus(name="Load", p_load=4, q_load=2.5, type=BusType.PQ))
-    # bus3 = instance.addBus(Bus(name="Generator", v=1.04, p_gen=2, type=BusType.PV))
+    instance: SimulatorController = SimulatorController.instance()
+    bus1 = instance.addBus(Bus(name="Slack Bus", v=1.05, type=BusType.SLACK))
+    bus2 = instance.addBus(Bus(name="Load", p_load=4, q_load=2.5, type=BusType.PQ))
+    bus3 = instance.addBus(Bus(name="Generator", v=1.04, p_gen=2, type=BusType.PV))
 
-    # instance.addConnection(Line.from_z(bus1, bus2, z=complex(0.02, 0.04)))
-    # instance.addConnection(Line.from_z(bus2, bus3, z=complex(0.0125, 0.025)))
-    # instance.addConnection(Line.from_z(bus3, bus1, z=complex(0.01, 0.03)))
+    instance.addConnection(Line.from_z(bus1, bus2, z=complex(0.02, 0.04)))
+    instance.addConnection(Line.from_z(bus2, bus3, z=complex(0.0125, 0.025)))
+    instance.addConnection(Line.from_z(bus3, bus1, z=complex(0.01, 0.03)))
 
     sys.exit(app.exec())
 
