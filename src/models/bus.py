@@ -104,15 +104,15 @@ class Bus(NetworkElement):
         )
 
     def __str__(self) -> str:
-        q_min: str = "        "
-        if self.q_min:
-            q_min = f"{self.q_min:+8.2f}"
-        q_max: str = "        "
-        if self.q_max:
-            q_max = f"{self.q_max:+8.2f}"
+        # q_min: str = "        "
+        # if self.q_min:
+        #     q_min = f"{self.q_min:+8.2f}"
+        # q_max: str = "        "
+        # if self.q_max:
+        #     q_max = f"{self.q_max:+8.2f}"
         return (
-            f"#{self.index:3d} | Type: {self.type.value} | V: {self.v:+4.3f}/_ {(self.o*180/cmath.pi):+8.4f}o |"
-            + f" P: {self.p:+8.2f} | Q: {self.q:+8.2f} |"
-            + f" P_sch: {self.p_sch:+8.2f} | Q_sch: {self.q_sch:+8.2f} |"
-            + f" Q_min: {q_min} | Q_max: {q_max} | shunt: {self.g_shunt:+4.2f}  {self.b_shunt:+4.2f}j |"
+            f"{self.id:4s} {self.type.name:5s}, v={self.v:+4.3f}/_ {(self.o*180/cmath.pi):+6.4f}o |"
+            + f", p={self.p:+8.2f}, q={self.q:+8.2f}"
+            + f", p_sch: {self.p_sch:+8.2f}, q_sch: {self.q_sch:+8.2f} |"
+            # + f" Q_min: {q_min} | Q_max: {q_max} | shunt: {self.g_shunt:+4.2f}  {self.b_shunt:+4.2f}j |"
         )

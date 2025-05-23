@@ -38,6 +38,7 @@ class SimulatorController:
         self.__buses = dict[str, Bus]()
         self.__connections = dict[str, Line]()
         self.__listeners: list[Callable[[NetworkElement, ElementEvent], None]] = []
+        self.power_base_mva: float = 100.0
 
     def listen(self, callback: Callable[[NetworkElement, ElementEvent], None]) -> None:
         self.__listeners.append(callback)
@@ -81,7 +82,7 @@ class SimulatorController:
         raise ValueError(f"Connection with id {id} not found")
 
     def runPowerFlow(self):
-        power_flow = PowerFlow()
+        power_flow = PowerFlow(base=self.power_base_mva)
         for bus in self.__buses.values():
             power_flow.add_bus(bus)
         for connection in self.__connections.values():
@@ -93,13 +94,14 @@ class SimulatorController:
                 callback(bus, ElementEvent.UPDATED)
 
     def printNetwork(self):
-        print("Network:")
-        print("Buses:")
-        for bus in self.__buses:
-            print(bus)
-        print("Connections:")
-        for connection in self.__connections:
-            print(connection)
+        pf = PowerFlow()
+        for bus in self.__buses.values():
+            bus = bus.copy_with()
+            pf.add_bus(bus)
+        for line in self.__connections.values():
+            line = line.copyWith()
+            pf.add_connection(line)
+        pf.print_data()
 
     def getElementNames(self, ids: list[str]) -> str:
         return " "  # TODO

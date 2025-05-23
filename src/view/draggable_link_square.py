@@ -52,6 +52,6 @@ class DraggableLinkSquare(QGraphicsRectItem):
             break
         if target:
             SimulatorController.instance().addConnection(
-                Line.from_z(self.parent.bus.id, target.parent.bus.id, z=complex(1))
+                Line.from_z(self.parent.bus.id, target.parent.bus.id, z=complex(0.01, 0.01))
             )
         event.accept()

@@ -7,6 +7,7 @@ from view.bus_table import BusTable
 from PySide6.QtWidgets import QSizePolicy
 
 from view.line_table import LineTable
+from view.text_field import TextField
 
 
 class MainWindow(QMainWindow):
@@ -45,11 +46,19 @@ class MainWindow(QMainWindow):
         show_lines_button = QPushButton("Lines")
         show_lines_button.setFixedSize(110, 30)
 
-        show_y_bar_matrix_button = QPushButton("Y Bar Matrix")
+        show_y_bar_matrix_button = QPushButton("Print Network")
         show_y_bar_matrix_button.setFixedSize(110, 30)
 
         runPowerFlowButton = QPushButton("Run Power Flow")
         runPowerFlowButton.setFixedSize(110, 30)
+
+        self.powerBaseField = TextField[int](
+            type=int,
+            title="base",
+            trailing="MVA",
+            on_focus_out=self.on_power_base_changed,
+            value=int(SimulatorController.instance().power_base_mva),
+        )
 
         # Create the board view.
         board = BoardView()
@@ -71,8 +80,10 @@ class MainWindow(QMainWindow):
         importFileButton.clicked.connect(board.import_json)
         expoerFileButton.clicked.connect(board.export_json)
         importIeeeFileButton.clicked.connect(board.import_ieee)
+        show_y_bar_matrix_button.clicked.connect(self.print_network)
 
         # Add widgets to the layout.
+        top_row.addWidget(self.powerBaseField)
         top_row.addWidget(importFileButton)
         top_row.addWidget(expoerFileButton)
         top_row.addWidget(importIeeeFileButton)
@@ -119,3 +130,15 @@ class MainWindow(QMainWindow):
         lineWindow.setCentralWidget(centralWidget)
         lineWindow.resize(800, 600)
         lineWindow.show()
+
+    def print_network(self):
+        SimulatorController.instance().printNetwork()
+
+    def on_power_base_changed(self):
+        controller = SimulatorController.instance()
+        powerBase = self.powerBaseField.getValue()
+        if powerBase == None or powerBase <= 0:
+            controller = SimulatorController.instance()
+            self.powerBaseField.setValue(int(controller.power_base_mva))
+            return
+        controller.power_base_mva = float(powerBase)

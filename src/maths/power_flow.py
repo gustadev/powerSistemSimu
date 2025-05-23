@@ -52,7 +52,7 @@ class PowerFlow:
             )
         return bus_matrix
 
-    def solve(self, max_iterations: int = 10, max_error: float = 100.0) -> None:
+    def solve(self, max_iterations: int = 10, max_error: float = 10000.0) -> None:
         print("Solving power flow...")
         self.__yMatrix = self.build_bus_matrix()
         self.__update_indexes()
@@ -212,3 +212,17 @@ class PowerFlow:
                 f"delta V{bus.index:3d}= {v_err:10.4f}pu  o={(o_err*180/cmath.pi):8.4f}o (RPD {o_relative:.2f}%)"
             )
         print(f"V_sum = {v_sum:.10f}  o_sum = {(o_sum*180/cmath.pi):8.4f}")
+
+    def print_data(self):
+        y = self.build_bus_matrix()
+        print("Data:")
+        print("\nBuses:")
+        for index, bus in enumerate(self.buses.values()):
+            bus.index = index
+            print(bus)
+        print("\nConnections:")
+        for connection in self.connections.values():
+            print(connection)
+        print("\nY matrix:")
+        for row in y.y_matrix:
+            print([f"{complex(x.real, x.imag):.2f}" for x in row])
