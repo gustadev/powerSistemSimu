@@ -128,8 +128,8 @@ class PowerFlow:
 
         print("\nPower flow solved.")
         for bus in self.buses.values():
-            bus.p = calcP(bus, self.buses, self.__yMatrix)
-            bus.q = calcQ(bus, self.buses, self.__yMatrix)
+            bus.p = calcP(bus, self.buses, self.__yMatrix)*self.base
+            bus.q = calcQ(bus, self.buses, self.__yMatrix)*self.base
             print(bus)
 
         self.show_error()

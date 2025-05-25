@@ -15,16 +15,16 @@ from view.draggable_link_square import DraggableLinkSquare
 
 class BusWidget(QGraphicsRectItem):
     def __init__(self, x: float, y: float, bus: Bus):
-        super().__init__(x, y, 50, 50)
+        super().__init__(x, y, 50, 10)
         self.bus: Bus = bus
         self.setBrush(Qt.GlobalColor.gray)
         self.setFlag(QGraphicsRectItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsRectItem.GraphicsItemFlag.ItemIsSelectable, True)
 
-        self.link = DraggableLinkSquare(x + 50 / 2, y + 50 / 2, self)
+        self.link = DraggableLinkSquare(x + 50 / 2, y, self)
 
         self.label = QGraphicsSimpleTextItem(self.__label, parent=self)
-        self.label.setPos(x, y + 50)
+        self.label.setPos(x, y + 10)
         SimulatorController.instance().listen(self.circuitListener)
 
     def circuitListener(self, node: NetworkElement, event: ElementEvent):

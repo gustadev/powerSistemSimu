@@ -11,7 +11,7 @@ class BusType(Enum):
 
 
 class Bus(NetworkElement):
-    __number: int = 0
+    __number: int = 1
 
     def __init__(
         self,
