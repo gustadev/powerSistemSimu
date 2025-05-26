@@ -72,6 +72,7 @@ class MainWindow(QMainWindow):
 
         run = toolbar.addMenu("Run")
         runLoadFlow = QAction("Load Flow", run)
+        runLoadFlow.setShortcut(QKeySequence("Ctrl+R"))
         runLoadFlow.triggered.connect(SimulatorController.instance().runPowerFlow)
         run.addAction(runLoadFlow)
 
@@ -80,6 +81,8 @@ class MainWindow(QMainWindow):
         bottom_row.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         addBusButton = QPushButton("Add Bus")
+        addBusButton.setShortcut(QKeySequence("Ctrl+B"))
+        addBusButton.setToolTip("Add a new bus to the network. Shortcut: Ctrl+B or Command+B")
         addBusButton.setFixedSize(70, 30)
         addBusButton.setIconSize(QSize(70, 30))
 
