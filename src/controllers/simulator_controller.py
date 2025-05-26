@@ -1,3 +1,7 @@
+from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QAction, QIcon, QKeySequence
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QSizePolicy
+
 from typing import Callable
 
 from maths.power_flow import PowerFlow
@@ -5,6 +9,8 @@ from models.bus import Bus
 from models.line import Line
 from models.network_element import ElementEvent, NetworkElement
 from typing import cast
+from view.results_view import ResultsView
+
 
 
 class SimulatorController:
@@ -28,7 +34,7 @@ class SimulatorController:
         self.__buses = dict[str, Bus]()
         self.__connections = dict[str, Line]()
         self.__listeners: list[Callable[[NetworkElement, ElementEvent], None]] = []
-        self.__results: str = "Results!!"
+        self.__results = ResultsView()
 
     def listen(self, callback: Callable[[NetworkElement, ElementEvent], None]) -> None:
         self.__listeners.append(callback)
@@ -97,3 +103,21 @@ class SimulatorController:
 
     def getElementNames(self, ids: list[str]) -> str:
         return " "  # TODO
+
+    def showResults(self):
+        resultsWindow = QMainWindow()
+        resultsWindow.setWindowTitle("Results")
+        centralWidget = QWidget()
+        layout = QVBoxLayout(centralWidget)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        rightWidget = self.__results
+        rightWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+
+        layout.addWidget(rightWidget)
+
+        resultsWindow.setCentralWidget(centralWidget)
+        resultsWindow.resize(800, 600)
+        resultsWindow.show()
+        self.__resultsWindow = resultsWindow
+        

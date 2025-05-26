@@ -1,12 +1,11 @@
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QAction, QIcon, QKeySequence
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QHBoxLayout
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QSizePolicy
 
 from controllers.simulator_controller import SimulatorController
 from view.board_view import BoardView
 from view.bus_table import BusTable
-from view.results_view import ResultsView
-from PySide6.QtWidgets import QSizePolicy
+# from view.results_view import ResultsView
 
 from view.line_table import LineTable
 
@@ -15,6 +14,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         centralWidget = QWidget()
+        simulatorInstance = SimulatorController.instance()
         self.setWindowTitle("Power Systems Simulator - Board")
         # Layout creation
         layoutBtnElements = QVBoxLayout()
@@ -33,7 +33,7 @@ class MainWindow(QMainWindow):
         view.addAction(viewLine)
 
         viewLine = QAction("Results",view)
-        viewLine.triggered.connect(self.show_results)
+        viewLine.triggered.connect(simulatorInstance.showResults)
         view.addAction(viewLine)
 
         show = toolbar.addMenu("Show")
@@ -75,8 +75,6 @@ class MainWindow(QMainWindow):
 
         # Create the board view.
         board = BoardView()
-
-        simulatorInstance = SimulatorController.instance()
 
         # Connect button signal to the board's addSquare method.
         addBusButton.clicked.connect(lambda: simulatorInstance.addBus())
@@ -129,19 +127,19 @@ class MainWindow(QMainWindow):
         lineWindow.resize(800, 600)
         lineWindow.show()
 
-    def show_results(self):
-        resultsWindow = QMainWindow(parent=self)
-        resultsWindow.setWindowTitle("Results")
-        centralWidget = QWidget()
-        layout = QVBoxLayout(centralWidget)
-        layout.setContentsMargins(0, 0, 0, 0)
+    # def show_results(self):
+    #     resultsWindow = QMainWindow(parent=self)
+    #     resultsWindow.setWindowTitle("Results")
+    #     centralWidget = QWidget()
+    #     layout = QVBoxLayout(centralWidget)
+    #     layout.setContentsMargins(0, 0, 0, 0)
 
-        rightWidget = ResultsView()
-        rightWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+    #     rightWidget = ResultsView()
+    #     rightWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
-        layout.addWidget(rightWidget)
+    #     layout.addWidget(rightWidget)
 
-        resultsWindow.setCentralWidget(centralWidget)
-        resultsWindow.resize(800, 600)
-        resultsWindow.show()
+    #     resultsWindow.setCentralWidget(centralWidget)
+    #     resultsWindow.resize(800, 600)
+    #     resultsWindow.show()
 
