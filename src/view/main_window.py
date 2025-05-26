@@ -22,6 +22,7 @@ class MainWindow(QMainWindow):
         horizontalLayout = QHBoxLayout()
 
         toolbar = self.menuBar()
+        toolbar.setNativeMenuBar(False)
 
         view = toolbar.addMenu("View")
         viewBars = QAction("Bars",view)
