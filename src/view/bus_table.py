@@ -1,4 +1,3 @@
-from typing import Tuple
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -42,7 +41,7 @@ class BusTable(QWidget):
         self.table.horizontalHeader().setStretchLastSection(True)
         layout.addWidget(self.table)
 
-        self.items: dict[str, Tuple[BusTableRow, int]] = {}
+        self.items: list[str] = []
         for bus in self.simulatorInstance.buses:
             row = self.table.rowCount()
             self.table.insertRow(row)
@@ -50,15 +49,21 @@ class BusTable(QWidget):
             widgets = bus_row.get_widgets()
             for col, widget in enumerate(widgets):
                 self.table.setCellWidget(row, col, widget)
-            self.items[bus.id] = (bus_row, row)
+            self.items.append(bus.id)
 
     def circuitListener(self, element: NetworkElement, event: ElementEvent):
-        if event is ElementEvent.CREATED:
-            if isinstance(element, Bus):
-                row = self.table.rowCount()
-                self.table.insertRow(row)
-                bus_row = BusTableRow(element)
-                widgets = bus_row.get_widgets()
-                for col, widget in enumerate(widgets):
-                    self.table.setCellWidget(row, col, widget)
-                self.items[element.id] = (bus_row, row)
+        if event is ElementEvent.CREATED and isinstance(element, Bus):
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+            bus_row = BusTableRow(element)
+            widgets = bus_row.get_widgets()
+            for col, widget in enumerate(widgets):
+                self.table.setCellWidget(row, col, widget)
+            self.items.append(element.id)
+
+        if event is ElementEvent.DELETED and isinstance(element, Bus):
+            for i, bus_id in enumerate(self.items):
+                if bus_id == element.id:
+                    self.table.removeRow(i)
+                    self.items.pop(i)
+                    break

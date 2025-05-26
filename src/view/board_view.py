@@ -1,4 +1,4 @@
-import PySide6
+from typing import Tuple
 from PySide6.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
@@ -10,8 +10,10 @@ from controllers.simulator_controller import ElementEvent, SimulatorController
 from models.bus import Bus
 from models.line import Line
 from models.network_element import NetworkElement
+from storage.storage import StorageFacade
 from view.bus_widget import BusWidget
 from view.link_line_item import LinkLineItem
+from PySide6.QtWidgets import QFileDialog
 
 
 class BoardView(QGraphicsView):
@@ -21,7 +23,8 @@ class BoardView(QGraphicsView):
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setBackgroundBrush(Qt.GlobalColor.white)
 
-        self.simulator_widgets = dict()
+        # self.setSceneRect(0, 0, 600, 400)
+        self.simulator_widgets = dict[str, object]()
         simulatorInstance = SimulatorController.instance()
         simulatorInstance.listen(self.circuitListener)
     
@@ -86,8 +89,75 @@ class BoardView(QGraphicsView):
         if event is ElementEvent.CREATED and isinstance(element, Line):
             sourceWidget = self.simulator_widgets[element.tap_bus_id].link
             targetWidget = self.simulator_widgets[element.z_bus_id].link
-            self.scene().addItem(LinkLineItem(sourceWidget, targetWidget, element))
+            line = LinkLineItem(sourceWidget, targetWidget, element)
+            self.scene().addItem(line)
+            self.simulator_widgets[element.id] = line
             return
+
+        if event is ElementEvent.DELETED:
+            widget = self.simulator_widgets[element.id]
+            self.scene().removeItem(widget)
+            del self.simulator_widgets[element.id]
+            return
+
+    def import_ieee(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Import IEEE File", "", "IEEE Files (*.txt);;All Files (*)"
+        )
+        if not file_path:
+            return
+        SimulatorController.instance().clear_state()
+
+        try:
+            power_flow = StorageFacade.read_ieee_file(file_path)
+            for bus in power_flow.buses.values():
+                SimulatorController.instance().addBus(bus)
+            for line in power_flow.connections.values():
+                SimulatorController.instance().addConnection(line)
+
+        except Exception as e:
+            print(f"Error importing IEEE file: {e}")
+        pass
+
+    def import_json(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Import JSON File", "", "JSON Files (*.json);;All Files (*)"
+        )
+        if not file_path:
+            return
+
+        SimulatorController.instance().clear_state()
+        try:
+            buses, lines, positions = StorageFacade.read_json_file(file_path)
+            for bus in buses:
+                SimulatorController.instance().addBus(bus)
+            for line in lines:
+                SimulatorController.instance().addConnection(line)
+
+            for index, bus in enumerate(buses):
+                bus_widget = self.simulator_widgets[bus.id]
+                position = positions[index]
+                bus_widget.setPos(position[0], position[1])
+        except Exception as e:
+            print(f"Error importing JSON file: {e}")
+
+    def export_json(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Export to JSON", "", "JSON Files (*.json);;All Files (*)"
+        )
+        if not file_path:
+            return
+
+        positions = list[Tuple[float, float]]()
+        for element in self.simulator_widgets.values():
+            if isinstance(element, BusWidget):
+                positions.append((element.x(), element.y()))
+        StorageFacade.save_json_file(
+            file_path,
+            buses=SimulatorController.instance().buses,
+            lines=SimulatorController.instance().connections,
+            positions=positions,
+        )
 
     # TODO handle deletion. must sync with simulator state
     # def keyPressEvent(self, event):

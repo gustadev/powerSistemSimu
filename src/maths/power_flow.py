@@ -52,7 +52,7 @@ class PowerFlow:
             )
         return bus_matrix
 
-    def solve(self, max_iterations: int = 10, max_error: float = 100.0) -> None:
+    def solve(self, max_iterations: int = 10, max_error: float = 10000.0) -> None:
         print("Solving power flow...")
         self.__yMatrix = self.build_bus_matrix()
         self.__update_indexes()
@@ -101,12 +101,6 @@ class PowerFlow:
 
             dX = numpy.dot(numpy.linalg.inv(j), ds)
 
-            print("J: ")
-            for row in j:
-                print("  [" + ", ".join(f"{item:10.4f}" for item in row) + "]")
-
-            print(f"dX: {dX}")
-
             for i, namedIndex in enumerate(self.indexes):
                 bus_id = namedIndex.busId
                 bus = self.buses[bus_id]
@@ -117,16 +111,14 @@ class PowerFlow:
                     elif newO < -2 * cmath.pi:
                         newO = newO % (-2 * cmath.pi)
                     bus.o = newO
-                    print(f"{namedIndex}: {bus.o:20.6f}rad / {(bus.o * 180 / cmath.pi):20.6f} deg")
 
                 elif namedIndex.variable == "v":
                     bus.v = abs(bus.v + dX[i])
-                    print(f"{namedIndex}: {bus.v:20.6f}pu")
 
             err = sum([abs(x) for x in dX])
             if err > max_error:
                 print(f"|E| = {err}.  Diverged at {iteration}.")
-                return
+                raise ValueError(f"Power flow diverged. {iteration} iterations.")
 
             if sum([abs(x) for x in dX]) < 1e-10:
                 print(f"|E| = {err}.  Converged at {iteration}.")
@@ -136,9 +128,11 @@ class PowerFlow:
 
         print("\nPower flow solved.")
         for bus in self.buses.values():
-            bus.p = calcP(bus, self.buses, self.__yMatrix)
-            bus.q = calcQ(bus, self.buses, self.__yMatrix)
+            bus.p = calcP(bus, self.buses, self.__yMatrix)*self.base
+            bus.q = calcQ(bus, self.buses, self.__yMatrix)*self.base
             print(bus)
+
+        self.show_error()
 
     def print_state(self):
         for bus in self.buses.values():
@@ -200,3 +194,35 @@ class PowerFlow:
         self, x: Callable[[str, str, str], Any]  # row, variable, power
     ) -> list[Any]:
         return [x(index.busId, index.variable, index.power) for _, index in enumerate(self.indexes)]
+
+    def show_error(self):
+        print("Diff:")
+        v_sum: float = 0
+        o_sum: float = 0
+
+        for bus in self.buses.values():
+            v_err: float = abs(bus.v - bus.v_sch)
+            o_err: float = abs(bus.o - bus.o_sch)
+            v_sum += v_err
+            o_sum += o_err
+            o_relative: float = 0
+            if bus.o - bus.o_sch != 0:
+                o_relative = 2 * 100 * (bus.o - bus.o_sch) / (abs(bus.o_sch) + abs(bus.o))
+            print(
+                f"delta V{bus.index:3d}= {v_err:10.4f}pu  o={(o_err*180/cmath.pi):8.4f}o (RPD {o_relative:.2f}%)"
+            )
+        print(f"V_sum = {v_sum:.10f}  o_sum = {(o_sum*180/cmath.pi):8.4f}")
+
+    def print_data(self):
+        y = self.build_bus_matrix()
+        print("Data:")
+        print("\nBuses:")
+        for index, bus in enumerate(self.buses.values()):
+            bus.index = index
+            print(bus)
+        print("\nConnections:")
+        for connection in self.connections.values():
+            print(connection)
+        print("\nY matrix:")
+        for row in y.y_matrix:
+            print([f"{complex(x.real, x.imag):.2f}" for x in row])

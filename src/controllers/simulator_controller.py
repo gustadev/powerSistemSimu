@@ -22,6 +22,16 @@ class SimulatorController:
             SimulatorController.__instance = SimulatorController()
         return SimulatorController.__instance
 
+    def clear_state(self):
+        for bus in self.__buses.values():
+            for listener in self.__listeners:
+                listener(bus, ElementEvent.DELETED)
+        for connection in self.__connections.values():
+            for listener in self.__listeners:
+                listener(connection, ElementEvent.DELETED)
+        self.__buses.clear()
+        self.__connections.clear()
+
     @property
     def buses(self) -> list[Bus]:
         return list(self.__buses.values())
@@ -34,6 +44,7 @@ class SimulatorController:
         self.__buses = dict[str, Bus]()
         self.__connections = dict[str, Line]()
         self.__listeners: list[Callable[[NetworkElement, ElementEvent], None]] = []
+        self.power_base_mva: float = 100.0
         self.__results = ResultsView()
 
     def listen(self, callback: Callable[[NetworkElement, ElementEvent], None]) -> None:
@@ -81,7 +92,7 @@ class SimulatorController:
     def clear_results(self):
         self.__results = ""
     def runPowerFlow(self):
-        power_flow = PowerFlow()
+        power_flow = PowerFlow(base=self.power_base_mva)
         for bus in self.__buses.values():
             power_flow.add_bus(bus)
         for connection in self.__connections.values():
@@ -93,13 +104,14 @@ class SimulatorController:
                 callback(bus, ElementEvent.UPDATED)
 
     def printNetwork(self):
-        print("Network:")
-        print("Buses:")
-        for bus in self.__buses:
-            print(bus)
-        print("Connections:")
-        for connection in self.__connections:
-            print(connection)
+        pf = PowerFlow()
+        for bus in self.__buses.values():
+            bus = bus.copy_with()
+            pf.add_bus(bus)
+        for line in self.__connections.values():
+            line = line.copyWith()
+            pf.add_connection(line)
+        pf.print_data()
 
     def getElementNames(self, ids: list[str]) -> str:
         return " "  # TODO

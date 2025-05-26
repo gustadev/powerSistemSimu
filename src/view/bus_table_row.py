@@ -1,3 +1,4 @@
+from cmath import pi
 from PySide6.QtWidgets import QWidget, QComboBox
 
 from controllers.simulator_controller import ElementEvent, SimulatorController
@@ -7,6 +8,9 @@ from view.text_field import TextField
 
 
 class BusTableRow:
+    __degToRad = pi / 180.0
+    __radToDeg = 180.0 / pi
+
     def __init__(self, bus: Bus):
         SimulatorController.instance().listen(self.circuit_listener)
         self.bus = bus
@@ -81,13 +85,18 @@ class BusTableRow:
 
     def save(self) -> None:
         bus_type: BusType = BusType[self.busTypeDropdown.currentText()]
+
+        o_from_field: float | None = self.angleField.getValue()
+        if o_from_field is not None:
+            o_from_field *= BusTableRow.__degToRad
+
         SimulatorController.instance().updateElement(
             self.bus.copy_with(
                 name=self.nameField.getValue(),
                 number=self.numberField.getValue(),
                 type=bus_type,
                 v=self.voltageField.getValue(),
-                o=self.angleField.getValue(),
+                o=o_from_field,
                 p_load=self.p_load.getValue(),
                 q_load=self.q_load.getValue(),
                 p_gen=self.p_gen.getValue(),
@@ -106,7 +115,7 @@ class BusTableRow:
         if idx >= 0:
             self.busTypeDropdown.setCurrentIndex(idx)
         self.voltageField.setValue(self.bus.v)
-        self.angleField.setValue(self.bus.o)
+        self.angleField.setValue(self.bus.o * BusTableRow.__radToDeg)
         self.p_field.setValue(self.bus.p)
         self.q_field.setValue(self.bus.q)
         if self.bus.p_load != 0:
