@@ -123,9 +123,38 @@ class PowerFlow:
                     bus.v = abs(bus.v + dX[i])
 
             err = sum([abs(x) for x in dX])
-            if err > max_error:
-                print(f"|E| = {err}.  Diverged at {iteration}.")
-                raise ValueError(f"Power flow diverged. {iteration} iterations.")
+            # if err > max_error:
+            #     print(f"|E| = {err}.  Diverged at {iteration}.")
+            #     raise ValueError(f"Power flow diverged. {iteration} iterations.")
+
+            has_to_update_indexes: bool = False
+            for i, bus in enumerate(self.buses.values()):
+                if bus.type == BusType.PV:
+                    q = calcQ(bus, self.buses, self.__yMatrix) * self.base
+                    if q > bus.q_max or q < bus.q_min:
+                        print(
+                            f"Bus {bus.name} (PV) has reactive power out of limits: {q:.2f} "
+                            f"({bus.q_min:.2f} - {bus.q_max:.2f})."
+                        )
+
+                        self.buses[bus.id].type = BusType.PQ
+                        self.buses[bus.id].q_sch = bus.q_max if q > bus.q_max else bus.q_min
+                        has_to_update_indexes = True
+
+                if bus.type == BusType.PQ:
+
+                    if bus.v > 1.1 or bus.v < 0.9:
+                        print(
+                            f"Bus {bus.name} (PQ) has voltage out of limits: {bus.v:.2f} "
+                            f"(0.9 - 1.1)."
+                        )
+
+                        self.buses[bus.id].type = BusType.PV
+                        self.buses[bus.id].v_sch = 0.9 if bus.v < 0.95 else 1.05
+                        has_to_update_indexes = True
+
+            if has_to_update_indexes:
+                self.__update_indexes()
 
             if sum([abs(x) for x in dX]) < 1e-10:
                 print(f"|E| = {err}.  Converged at {iteration}.")
