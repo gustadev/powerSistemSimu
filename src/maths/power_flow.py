@@ -147,9 +147,11 @@ class PowerFlow:
             final: float = 0.0
             rpd: float = 0.0
             final = bus.v if index.variable == "v" else bus.o * 180.0 / cmath.pi
-            if final - start != 0:
-                rpd = 2.0 * 100.0 * (final - start) / (abs(final) + abs(start))
-            print(f"{index.variable}{index.index:3d} {start:+8.4f} -> {final:+8.4f} (RPD {rpd:+4.4f}%)")
+            if final + start != 0.0:
+                rpd = 100.0 * abs(final - start) / ((final + start) / 2)
+            print(
+                f"{index.variable}{index.index:3d} {start:+8.4f} -> {final:+8.4f} (RPD {rpd:+4.4f}%)"
+            )
 
     def print_state(self):
         for bus in self.buses.values():
