@@ -56,6 +56,13 @@ class PowerFlow:
         print("Solving power flow...")
         self.__yMatrix = self.build_bus_matrix()
         self.__update_indexes()
+        initial_values = list[float]()
+        for variable_index in self.indexes:
+            bus = self.buses[variable_index.busId]
+            if variable_index.variable == "o":
+                initial_values.append(bus.o)
+            elif variable_index.variable == "v":
+                initial_values.append(bus.v)
 
         n: int = len(self.buses)
         j: list[list[float]] = [[0 for _ in range(n)] for _ in range(n)]
@@ -128,11 +135,21 @@ class PowerFlow:
 
         print("\nPower flow solved.")
         for bus in self.buses.values():
-            bus.p = calcP(bus, self.buses, self.__yMatrix)*self.base
-            bus.q = calcQ(bus, self.buses, self.__yMatrix)*self.base
+            bus.p = calcP(bus, self.buses, self.__yMatrix) * self.base
+            bus.q = calcQ(bus, self.buses, self.__yMatrix) * self.base
             print(bus)
 
-        self.show_error()
+        for i, index in enumerate(self.indexes):
+            bus = self.buses[index.busId]
+            start: float = (
+                initial_values[i] if index.variable == "v" else initial_values[i] * 180.0 / cmath.pi
+            )
+            final: float = 0.0
+            rpd: float = 0.0
+            final = bus.v if index.variable == "v" else bus.o * 180.0 / cmath.pi
+            if final - start != 0:
+                rpd = 2.0 * 100.0 * (final - start) / (abs(final) + abs(start))
+            print(f"{index.variable}{index.index:3d} {start:+8.4f} -> {final:+8.4f} (RPD {rpd:+4.4f}%)")
 
     def print_state(self):
         for bus in self.buses.values():
@@ -194,24 +211,6 @@ class PowerFlow:
         self, x: Callable[[str, str, str], Any]  # row, variable, power
     ) -> list[Any]:
         return [x(index.busId, index.variable, index.power) for _, index in enumerate(self.indexes)]
-
-    def show_error(self):
-        print("Diff:")
-        v_sum: float = 0
-        o_sum: float = 0
-
-        for bus in self.buses.values():
-            v_err: float = abs(bus.v - bus.v_sch)
-            o_err: float = abs(bus.o - bus.o_sch)
-            v_sum += v_err
-            o_sum += o_err
-            o_relative: float = 0
-            if bus.o - bus.o_sch != 0:
-                o_relative = 2 * 100 * (bus.o - bus.o_sch) / (abs(bus.o_sch) + abs(bus.o))
-            print(
-                f"delta V{bus.index:3d}= {v_err:10.4f}pu  o={(o_err*180/cmath.pi):8.4f}o (RPD {o_relative:.2f}%)"
-            )
-        print(f"V_sum = {v_sum:.10f}  o_sum = {(o_sum*180/cmath.pi):8.4f}")
 
     def print_data(self):
         y = self.build_bus_matrix()
