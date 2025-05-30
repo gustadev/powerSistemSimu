@@ -1,4 +1,5 @@
 import cmath
+from math import sqrt
 from typing import Any, Callable
 import numpy
 
@@ -52,7 +53,9 @@ class PowerFlow:
             )
         return bus_matrix
 
-    def solve(self, max_iterations: int = 10, max_error: float = 10000.0) -> None:
+    def solve(
+        self, max_iterations: int = 10, max_error: float = 10000.0, decoupled: bool = False
+    ) -> None:
         print("Solving power flow...")
         self.__yMatrix = self.build_bus_matrix()
         self.__update_indexes()
@@ -73,7 +76,7 @@ class PowerFlow:
                 s_sch.append(bus.p_sch)
             elif namedIndex.variable == "v" and (bus.type == BusType.PV or bus.type == BusType.PQ):
                 s_sch.append(bus.q_sch)
-
+        self.split_index: int = 0
         for iteration in range(1, max_iterations + 1):
             print(f"\nIteration {iteration}:")
 
@@ -95,6 +98,7 @@ class PowerFlow:
                 dSdX: Callable[[str, str, dict[str, Bus], YBusSquareMatrix], float] = dPdO
                 if diff == "∂p/∂o":
                     dSdX = dPdO
+                    self.split_index += 1
                 elif diff == "∂p/∂v":
                     dSdX = dPdV
                 elif diff == "∂q/∂o":
@@ -106,17 +110,29 @@ class PowerFlow:
             ds = self.__map_indexes_list(getPowerResidues)
             j = self.__map_indexes_matrix(getJacobianElement)
 
-            dX = numpy.dot(numpy.linalg.inv(j), ds)
+            # decouple split index on jacobian matrix
+            self.split_index = int(sqrt(self.split_index))
+            if decoupled:
+                j_dpdo = [row[: self.split_index] for row in j[: self.split_index]]
+                j_dqdv = [row[self.split_index :] for row in j[self.split_index :]]
+
+                dp = ds[: self.split_index]
+                dq = ds[self.split_index :]
+                do = numpy.dot(numpy.linalg.inv(j_dpdo), dp)
+                dv = numpy.dot(numpy.linalg.inv(j_dqdv), dq)
+                dX = numpy.concatenate((do, dv))
+            else:
+                dX = numpy.dot(numpy.linalg.inv(j), ds)
 
             for i, namedIndex in enumerate(self.indexes):
                 bus_id = namedIndex.busId
                 bus = self.buses[bus_id]
                 if namedIndex.variable == "o":
                     newO = bus.o + dX[i]
-                    if newO > cmath.pi:
-                        newO = newO % (cmath.pi)
-                    elif newO < -cmath.pi:
-                        newO = newO % (-cmath.pi)
+                    # if newO > cmath.pi:
+                    #     newO = newO % (cmath.pi)
+                    # elif newO < -cmath.pi:
+                    #     newO = newO % (-cmath.pi)
                     bus.o = newO
 
                 elif namedIndex.variable == "v":
