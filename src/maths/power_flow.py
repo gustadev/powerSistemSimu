@@ -113,10 +113,10 @@ class PowerFlow:
                 bus = self.buses[bus_id]
                 if namedIndex.variable == "o":
                     newO = bus.o + dX[i]
-                    if newO > 2 * cmath.pi:
-                        newO = newO % (2 * cmath.pi)
-                    elif newO < -2 * cmath.pi:
-                        newO = newO % (-2 * cmath.pi)
+                    if newO > cmath.pi:
+                        newO = newO % (cmath.pi)
+                    elif newO < -cmath.pi:
+                        newO = newO % (-cmath.pi)
                     bus.o = newO
 
                 elif namedIndex.variable == "v":
@@ -150,7 +150,7 @@ class PowerFlow:
                         )
 
                         self.buses[bus.id].type = BusType.PV
-                        self.buses[bus.id].v_sch = 0.9 if bus.v < 0.95 else 1.05
+                        self.buses[bus.id].v_sch = 0.95 if bus.v < 0.95 else 1.05
                         has_to_update_indexes = True
 
             if has_to_update_indexes:
